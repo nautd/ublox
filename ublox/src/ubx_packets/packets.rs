@@ -1,4 +1,4 @@
-use crate::cfg_val::CfgVal;
+use crate::cfg_val::{CfgVal, KeyId};
 use core::convert::TryInto;
 use core::fmt;
 
@@ -32,78 +32,6 @@ pub(crate) trait SerializeUbxPacketFields {
     fn serialize_fields<S>(&self, serializer: &mut S) -> Result<(), S::Error>
     where
         S: serde::ser::SerializeMap;
-}
-
-/// Geodetic Position Solution
-#[ubx_packet_recv]
-#[ubx(class = 1, id = 2, fixed_payload_len = 28)]
-struct NavPosLlh {
-    /// GPS Millisecond Time of Week
-    itow: u32,
-
-    /// Longitude
-    #[ubx(map_type = f64, scale = 1e-7, alias = lon_degrees)]
-    lon: i32,
-
-    /// Latitude
-    #[ubx(map_type = f64, scale = 1e-7, alias = lat_degrees)]
-    lat: i32,
-
-    /// Height above Ellipsoid
-    #[ubx(map_type = f64, scale = 1e-3)]
-    height_meters: i32,
-
-    /// Height above mean sea level
-    #[ubx(map_type = f64, scale = 1e-3)]
-    height_msl: i32,
-
-    /// Horizontal Accuracy Estimate
-    #[ubx(map_type = f64, scale = 1e-3)]
-    h_ack: u32,
-
-    /// Vertical Accuracy Estimate
-    #[ubx(map_type = f64, scale = 1e-3)]
-    v_acc: u32,
-}
-
-/// Velocity Solution in NED
-#[ubx_packet_recv]
-#[ubx(class = 1, id = 0x12, fixed_payload_len = 36)]
-struct NavVelNed {
-    /// GPS Millisecond Time of Week
-    itow: u32,
-
-    /// north velocity (m/s)
-    #[ubx(map_type = f64, scale = 1e-2)]
-    vel_north: i32,
-
-    /// east velocity (m/s)
-    #[ubx(map_type = f64, scale = 1e-2)]
-    vel_east: i32,
-
-    /// down velocity (m/s)
-    #[ubx(map_type = f64, scale = 1e-2)]
-    vel_down: i32,
-
-    /// Speed 3-D (m/s)
-    #[ubx(map_type = f64, scale = 1e-2)]
-    speed_3d: u32,
-
-    /// Ground speed (m/s)
-    #[ubx(map_type = f64, scale = 1e-2)]
-    ground_speed: u32,
-
-    /// Heading of motion 2-D (degrees)
-    #[ubx(map_type = f64, scale = 1e-5, alias = heading_degrees)]
-    heading: i32,
-
-    /// Speed Accuracy Estimate (m/s)
-    #[ubx(map_type = f64, scale = 1e-2)]
-    speed_accuracy_estimate: u32,
-
-    /// Course / Heading Accuracy Estimate (degrees)
-    #[ubx(map_type = f64, scale = 1e-5)]
-    course_heading_accuracy_estimate: u32,
 }
 
 /// High Precision Geodetic Position Solution
@@ -225,636 +153,6 @@ struct NavHpPosEcef {
     /// Horizontal accuracy estimate (mm)
     #[ubx(map_type = f64, scale = 1e-1)]
     p_acc: u32,
-}
-
-/// Navigation Position Velocity Time Solution
-#[ubx_packet_recv]
-#[ubx(class = 1, id = 0x07, fixed_payload_len = 92)]
-struct NavPvt {
-    /// GPS Millisecond Time of Week
-    itow: u32,
-    year: u16,
-    month: u8,
-    day: u8,
-    hour: u8,
-    min: u8,
-    sec: u8,
-    valid: u8,
-    time_accuracy: u32,
-    nanosecond: i32,
-
-    /// GNSS fix Type
-    #[ubx(map_type = GpsFix)]
-    fix_type: u8,
-    #[ubx(map_type = NavPvtFlags)]
-    flags: u8,
-    #[ubx(map_type = NavPvtFlags2)]
-    flags2: u8,
-    num_satellites: u8,
-    #[ubx(map_type = f64, scale = 1e-7, alias = lon_degrees)]
-    lon: i32,
-    #[ubx(map_type = f64, scale = 1e-7, alias = lat_degrees)]
-    lat: i32,
-
-    /// Height above Ellipsoid
-    #[ubx(map_type = f64, scale = 1e-3)]
-    height_meters: i32,
-
-    /// Height above mean sea level
-    #[ubx(map_type = f64, scale = 1e-3)]
-    height_msl: i32,
-    horiz_accuracy: u32,
-    vert_accuracy: u32,
-
-    /// north velocity (m/s)
-    #[ubx(map_type = f64, scale = 1e-3)]
-    vel_north: i32,
-
-    /// east velocity (m/s)
-    #[ubx(map_type = f64, scale = 1e-3)]
-    vel_east: i32,
-
-    /// down velocity (m/s)
-    #[ubx(map_type = f64, scale = 1e-3)]
-    vel_down: i32,
-
-    /// Ground speed (m/s)
-    #[ubx(map_type = f64, scale = 1e-3)]
-    ground_speed: u32,
-
-    /// Heading of motion 2-D (degrees)
-    #[ubx(map_type = f64, scale = 1e-5, alias = heading_degrees)]
-    heading: i32,
-
-    /// Speed Accuracy Estimate (m/s)
-    #[ubx(map_type = f64, scale = 1e-3)]
-    speed_accuracy_estimate: u32,
-
-    /// Heading accuracy estimate (both motionand vehicle) (degrees)
-    #[ubx(map_type = f64, scale = 1e-5)]
-    heading_accuracy_estimate: u32,
-
-    /// Position DOP
-    pdop: u16,
-    reserved1: [u8; 6],
-    #[ubx(map_type = f64, scale = 1e-5, alias = heading_of_vehicle_degrees)]
-    heading_of_vehicle: i32,
-    #[ubx(map_type = f64, scale = 1e-2, alias = magnetic_declination_degrees)]
-    magnetic_declination: i16,
-    #[ubx(map_type = f64, scale = 1e-2, alias = magnetic_declination_accuracy_degrees)]
-    magnetic_declination_accuracy: u16,
-}
-
-#[ubx_extend_bitflags]
-#[ubx(from, rest_reserved)]
-bitflags! {
-    /// Fix status flags for `NavPvt`
-    #[derive(Debug)]
-    pub struct NavPvtFlags: u8 {
-        /// position and velocity valid and within DOP and ACC Masks
-        const GPS_FIX_OK = 1;
-        /// DGPS used
-        const DIFF_SOLN = 2;
-        /// 1 = heading of vehicle is valid
-        const HEAD_VEH_VALID = 0x20;
-        const CARR_SOLN_FLOAT = 0x40;
-        const CARR_SOLN_FIXED = 0x80;
-    }
-}
-
-#[ubx_extend_bitflags]
-#[ubx(from, rest_reserved)]
-bitflags! {
-    /// Additional flags for `NavPvt`
-    #[derive(Debug)]
-    pub struct NavPvtFlags2: u8 {
-        /// 1 = information about UTC Date and Time of Day validity confirmation
-        /// is available. This flag is only supported in Protocol Versions
-        /// 19.00, 19.10, 20.10, 20.20, 20.30, 22.00, 23.00, 23.01,27 and 28.
-        const CONFIRMED_AVAI = 0x20;
-        /// 1 = UTC Date validity could be confirmed
-        /// (confirmed by using an additional independent source)
-        const CONFIRMED_DATE = 0x40;
-        /// 1 = UTC Time of Day could be confirmed
-        /// (confirmed by using an additional independent source)
-        const CONFIRMED_TIME = 0x80;
-    }
-}
-
-///  Receiver Navigation Status
-#[ubx_packet_recv]
-#[ubx(class = 1, id = 3, fixed_payload_len = 16)]
-struct NavStatus {
-    /// GPS Millisecond Time of Week
-    itow: u32,
-
-    /// GPS fix Type, this value does not qualify a fix as
-
-    /// valid and within the limits
-    #[ubx(map_type = GpsFix)]
-    fix_type: u8,
-
-    /// Navigation Status Flags
-    #[ubx(map_type = NavStatusFlags)]
-    flags: u8,
-
-    /// Fix Status Information
-    #[ubx(map_type = FixStatusInfo)]
-    fix_stat: u8,
-
-    /// further information about navigation output
-    #[ubx(map_type = NavStatusFlags2)]
-    flags2: u8,
-
-    /// Time to first fix (millisecond time tag)
-    time_to_first_fix: u32,
-
-    /// Milliseconds since Startup / Reset
-    uptime_ms: u32,
-}
-
-/// Dilution of precision
-#[ubx_packet_recv]
-#[ubx(class = 1, id = 4, fixed_payload_len = 18)]
-struct NavDop {
-    /// GPS Millisecond Time of Week
-    itow: u32,
-    #[ubx(map_type = f32, scale = 1e-2)]
-    geometric_dop: u16,
-    #[ubx(map_type = f32, scale = 1e-2)]
-    position_dop: u16,
-    #[ubx(map_type = f32, scale = 1e-2)]
-    time_dop: u16,
-    #[ubx(map_type = f32, scale = 1e-2)]
-    vertical_dop: u16,
-    #[ubx(map_type = f32, scale = 1e-2)]
-    horizontal_dop: u16,
-    #[ubx(map_type = f32, scale = 1e-2)]
-    northing_dop: u16,
-    #[ubx(map_type = f32, scale = 1e-2)]
-    easting_dop: u16,
-}
-
-/// End of Epoch Marker
-#[ubx_packet_recv]
-#[ubx(class = 0x01, id = 0x61, fixed_payload_len = 4)]
-struct NavEoe {
-    /// GPS time of week for navigation epoch
-    itow: u32,
-}
-
-/// Navigation Solution Information
-#[ubx_packet_recv]
-#[ubx(class = 1, id = 6, fixed_payload_len = 52)]
-struct NavSolution {
-    /// GPS Millisecond Time of Week
-    itow: u32,
-
-    /// Fractional part of iTOW (range: +/-500000).
-    ftow_ns: i32,
-
-    /// GPS week number of the navigation epoch
-    week: i16,
-
-    /// GPS fix Type
-    #[ubx(map_type = GpsFix)]
-    fix_type: u8,
-
-    /// Navigation Status Flags
-    #[ubx(map_type = NavStatusFlags)]
-    flags: u8,
-
-    /// ECEF X coordinate (meters)
-    #[ubx(map_type = f64, scale = 1e-2)]
-    ecef_x: i32,
-
-    /// ECEF Y coordinate (meters)
-    #[ubx(map_type = f64, scale = 1e-2)]
-    ecef_y: i32,
-
-    /// ECEF Z coordinate (meters)
-    #[ubx(map_type = f64, scale = 1e-2)]
-    ecef_z: i32,
-
-    /// 3D Position Accuracy Estimate
-    #[ubx(map_type = f64, scale = 1e-2)]
-    position_accuracy_estimate: u32,
-
-    /// ECEF X velocity (m/s)
-    #[ubx(map_type = f64, scale = 1e-2)]
-    ecef_vx: i32,
-
-    /// ECEF Y velocity (m/s)
-    #[ubx(map_type = f64, scale = 1e-2)]
-    ecef_vy: i32,
-
-    /// ECEF Z velocity (m/s)
-    #[ubx(map_type = f64, scale = 1e-2)]
-    ecef_vz: i32,
-
-    /// Speed Accuracy Estimate
-    #[ubx(map_type = f64, scale = 1e-2)]
-    speed_accuracy_estimate: u32,
-
-    /// Position DOP
-    #[ubx(map_type = f32, scale = 1e-2)]
-    pdop: u16,
-    reserved1: u8,
-
-    /// Number of SVs used in Nav Solution
-    num_sv: u8,
-    reserved2: [u8; 4],
-}
-
-/// GPS fix Type
-#[ubx_extend]
-#[ubx(from, rest_reserved)]
-#[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum GpsFix {
-    NoFix = 0,
-    DeadReckoningOnly = 1,
-    Fix2D = 2,
-    Fix3D = 3,
-    GPSPlusDeadReckoning = 4,
-    TimeOnlyFix = 5,
-}
-
-#[ubx_extend_bitflags]
-#[ubx(from, rest_reserved)]
-bitflags! {
-    /// Navigation Status Flags
-    #[derive(Debug)]
-    pub struct NavStatusFlags: u8 {
-        /// position and velocity valid and within DOP and ACC Masks
-        const GPS_FIX_OK = 1;
-        /// DGPS used
-        const DIFF_SOLN = 2;
-        /// Week Number valid
-        const WKN_SET = 4;
-        /// Time of Week valid
-        const TOW_SET = 8;
-    }
-}
-
-/// Fix Status Information
-#[repr(transparent)]
-#[derive(Copy, Clone)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
-pub struct FixStatusInfo(u8);
-
-impl FixStatusInfo {
-    pub const fn has_pr_prr_correction(self) -> bool {
-        (self.0 & 1) == 1
-    }
-    pub fn map_matching(self) -> MapMatchingStatus {
-        let bits = (self.0 >> 6) & 3;
-        match bits {
-            0 => MapMatchingStatus::None,
-            1 => MapMatchingStatus::Valid,
-            2 => MapMatchingStatus::Used,
-            3 => MapMatchingStatus::Dr,
-            _ => unreachable!(),
-        }
-    }
-    pub const fn from(x: u8) -> Self {
-        Self(x)
-    }
-}
-
-impl fmt::Debug for FixStatusInfo {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("FixStatusInfo")
-            .field("has_pr_prr_correction", &self.has_pr_prr_correction())
-            .field("map_matching", &self.map_matching())
-            .finish()
-    }
-}
-
-#[derive(Copy, Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
-pub enum MapMatchingStatus {
-    None = 0,
-    /// valid, i.e. map matching data was received, but was too old
-    Valid = 1,
-    /// used, map matching data was applied
-    Used = 2,
-    /// map matching was the reason to enable the dead reckoning
-    /// gpsFix type instead of publishing no fix
-    Dr = 3,
-}
-
-/// Further information about navigation output
-/// Only for FW version >= 7.01; undefined otherwise
-#[ubx_extend]
-#[ubx(from, rest_reserved)]
-#[repr(u8)]
-#[derive(Debug, Copy, Clone)]
-enum NavStatusFlags2 {
-    Acquisition = 0,
-    Tracking = 1,
-    PowerOptimizedTracking = 2,
-    Inactive = 3,
-}
-
-#[repr(transparent)]
-#[derive(Copy, Clone)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
-pub struct NavSatSvFlags(u32);
-
-impl NavSatSvFlags {
-    pub fn quality_ind(self) -> NavSatQualityIndicator {
-        let bits = self.0 & 0x7;
-        match bits {
-            0 => NavSatQualityIndicator::NoSignal,
-            1 => NavSatQualityIndicator::Searching,
-            2 => NavSatQualityIndicator::SignalAcquired,
-            3 => NavSatQualityIndicator::SignalDetected,
-            4 => NavSatQualityIndicator::CodeLock,
-            5..=7 => NavSatQualityIndicator::CarrierLock,
-            _ => {
-                panic!("Unexpected 3-bit bitfield value {}!", bits);
-            },
-        }
-    }
-
-    pub fn sv_used(self) -> bool {
-        (self.0 >> 3) & 0x1 != 0
-    }
-
-    pub fn health(self) -> NavSatSvHealth {
-        let bits = (self.0 >> 4) & 0x3;
-        match bits {
-            1 => NavSatSvHealth::Healthy,
-            2 => NavSatSvHealth::Unhealthy,
-            x => NavSatSvHealth::Unknown(x as u8),
-        }
-    }
-
-    pub fn differential_correction_available(self) -> bool {
-        (self.0 >> 6) & 0x1 != 0
-    }
-
-    pub fn smoothed(self) -> bool {
-        (self.0 >> 7) & 0x1 != 0
-    }
-
-    pub fn orbit_source(self) -> NavSatOrbitSource {
-        let bits = (self.0 >> 8) & 0x7;
-        match bits {
-            0 => NavSatOrbitSource::NoInfoAvailable,
-            1 => NavSatOrbitSource::Ephemeris,
-            2 => NavSatOrbitSource::Almanac,
-            3 => NavSatOrbitSource::AssistNowOffline,
-            4 => NavSatOrbitSource::AssistNowAutonomous,
-            x => NavSatOrbitSource::Other(x as u8),
-        }
-    }
-
-    pub fn ephemeris_available(self) -> bool {
-        (self.0 >> 11) & 0x1 != 0
-    }
-
-    pub fn almanac_available(self) -> bool {
-        (self.0 >> 12) & 0x1 != 0
-    }
-
-    pub fn an_offline_available(self) -> bool {
-        (self.0 >> 13) & 0x1 != 0
-    }
-
-    pub fn an_auto_available(self) -> bool {
-        (self.0 >> 14) & 0x1 != 0
-    }
-
-    pub fn sbas_corr(self) -> bool {
-        (self.0 >> 16) & 0x1 != 0
-    }
-
-    pub fn rtcm_corr(self) -> bool {
-        (self.0 >> 17) & 0x1 != 0
-    }
-
-    pub fn slas_corr(self) -> bool {
-        (self.0 >> 18) & 0x1 != 0
-    }
-
-    pub fn spartn_corr(self) -> bool {
-        (self.0 >> 19) & 0x1 != 0
-    }
-
-    pub fn pr_corr(self) -> bool {
-        (self.0 >> 20) & 0x1 != 0
-    }
-
-    pub fn cr_corr(self) -> bool {
-        (self.0 >> 21) & 0x1 != 0
-    }
-
-    pub fn do_corr(self) -> bool {
-        (self.0 >> 22) & 0x1 != 0
-    }
-
-    pub const fn from(x: u32) -> Self {
-        Self(x)
-    }
-}
-
-impl fmt::Debug for NavSatSvFlags {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("NavSatSvFlags")
-            .field("quality_ind", &self.quality_ind())
-            .field("sv_used", &self.sv_used())
-            .field("health", &self.health())
-            .field(
-                "differential_correction_available",
-                &self.differential_correction_available(),
-            )
-            .field("smoothed", &self.smoothed())
-            .field("orbit_source", &self.orbit_source())
-            .field("ephemeris_available", &self.ephemeris_available())
-            .field("almanac_available", &self.almanac_available())
-            .field("an_offline_available", &self.an_offline_available())
-            .field("an_auto_available", &self.an_auto_available())
-            .field("sbas_corr", &self.sbas_corr())
-            .field("rtcm_corr", &self.rtcm_corr())
-            .field("slas_corr", &self.slas_corr())
-            .field("spartn_corr", &self.spartn_corr())
-            .field("pr_corr", &self.pr_corr())
-            .field("cr_corr", &self.cr_corr())
-            .field("do_corr", &self.do_corr())
-            .finish()
-    }
-}
-
-#[derive(Copy, Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum NavSatQualityIndicator {
-    NoSignal,
-    Searching,
-    SignalAcquired,
-    SignalDetected,
-    CodeLock,
-    CarrierLock,
-}
-
-#[derive(Copy, Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum NavSatSvHealth {
-    Healthy,
-    Unhealthy,
-    Unknown(u8),
-}
-
-#[derive(Copy, Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum NavSatOrbitSource {
-    NoInfoAvailable,
-    Ephemeris,
-    Almanac,
-    AssistNowOffline,
-    AssistNowAutonomous,
-    Other(u8),
-}
-
-#[ubx_packet_recv]
-#[ubx(class = 0x01, id = 0x35, fixed_payload_len = 12)]
-struct NavSatSvInfo {
-    gnss_id: u8,
-    sv_id: u8,
-    cno: u8,
-    elev: i8,
-    azim: i16,
-    pr_res: i16,
-
-    #[ubx(map_type = NavSatSvFlags)]
-    flags: u32,
-}
-
-#[derive(Debug, Clone)]
-pub struct NavSatIter<'a> {
-    data: &'a [u8],
-    offset: usize,
-}
-
-impl<'a> NavSatIter<'a> {
-    fn new(data: &'a [u8]) -> Self {
-        Self { data, offset: 0 }
-    }
-
-    fn is_valid(bytes: &[u8]) -> bool {
-        bytes.len() % 12 == 0
-    }
-}
-
-impl<'a> core::iter::Iterator for NavSatIter<'a> {
-    type Item = NavSatSvInfoRef<'a>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.offset < self.data.len() {
-            let data = &self.data[self.offset..self.offset + 12];
-            self.offset += 12;
-            Some(NavSatSvInfoRef(data))
-        } else {
-            None
-        }
-    }
-}
-
-#[ubx_packet_recv]
-#[ubx(class = 0x01, id = 0x35, max_payload_len = 1240)]
-struct NavSat {
-    /// GPS time of week in ms
-    itow: u32,
-
-    /// Message version, should be 1
-    version: u8,
-
-    num_svs: u8,
-
-    reserved: [u8; 2],
-
-    #[ubx(
-        map_type = NavSatIter,
-        from = NavSatIter::new,
-        is_valid = NavSatIter::is_valid,
-        may_fail,
-        get_as_ref,
-    )]
-    svs: [u8; 0],
-}
-
-/// Odometer solution
-#[ubx_packet_recv]
-#[ubx(class = 0x01, id = 0x09, fixed_payload_len = 20)]
-struct NavOdo {
-    version: u8,
-    reserved: [u8; 3],
-    itow: u32,
-    distance: u32,
-    total_distance: u32,
-    distance_std: u32,
-}
-
-/// Reset odometer
-#[ubx_packet_send]
-#[ubx(class = 0x01, id = 0x10, fixed_payload_len = 0)]
-struct NavResetOdo {}
-
-/// Configure odometer
-#[ubx_packet_recv_send]
-#[ubx(
-    class = 0x06,
-    id = 0x1E,
-    fixed_payload_len = 20,
-    flags = "default_for_builder"
-)]
-struct CfgOdo {
-    version: u8,
-    reserved: [u8; 3],
-    /// Odometer COG filter flags. See [OdoCogFilterFlags] for details.
-    #[ubx(map_type = OdoCogFilterFlags)]
-    flags: u8,
-    #[ubx(map_type = OdoProfile, may_fail)]
-    odo_cfg: u8,
-    reserved2: [u8; 6],
-    cog_max_speed: u8,
-    cog_max_pos_acc: u8,
-    reserved3: [u8; 2],
-    vel_lp_gain: u8,
-    cog_lp_gain: u8,
-    reserved4: [u8; 2],
-}
-
-#[ubx_extend_bitflags]
-#[ubx(from, into_raw, rest_reserved)]
-bitflags! {
-    #[derive(Default, Debug)]
-    pub struct OdoCogFilterFlags: u8 {
-        /// Odometer enabled flag
-        const USE_ODO = 0x01;
-        /// Low-speed COG filter enabled flag
-        const USE_COG = 0x02;
-        /// Output low-pass filtered velocity flag
-        const OUT_LP_VEL = 0x04;
-        /// Output low-pass filtered heading (COG) flag
-        const OUT_LP_COG = 0x08;
-    }
-}
-
-/// Odometer configuration profile
-#[derive(Default)]
-#[ubx_extend]
-#[ubx(from_unchecked, into_raw, rest_error)]
-#[repr(u8)]
-#[derive(Clone, Copy, Debug)]
-pub enum OdoProfile {
-    #[default]
-    Running = 0,
-    Cycling = 1,
-    Swimming = 2,
-    Car = 3,
-    Custom = 4,
 }
 
 /// Configure Jamming interference monitoring
@@ -1286,7 +584,7 @@ struct AlpSrv {
 /// Messages in this class are sent as a result of a CFG message being
 /// received, decoded and processed by thereceiver.
 #[ubx_packet_recv]
-#[ubx(class = 5, id = 1, fixed_payload_len = 2)]
+#[ubx(class = 0x05, id = 0x01, fixed_payload_len = 2)]
 struct AckAck {
     /// Class ID of the Acknowledged Message
     class: u8,
@@ -1303,7 +601,7 @@ impl<'a> AckAckRef<'a> {
 
 /// Message Not-Acknowledge
 #[ubx_packet_recv]
-#[ubx(class = 5, id = 0, fixed_payload_len = 2)]
+#[ubx(class = 0x05, id = 0x00, fixed_payload_len = 2)]
 struct AckNak {
     /// Class ID of the Acknowledged Message
     class: u8,
@@ -1320,7 +618,7 @@ impl<'a> AckNakRef<'a> {
 
 /// Reset Receiver / Clear Backup Data Structures
 #[ubx_packet_send]
-#[ubx(class = 6, id = 4, fixed_payload_len = 4)]
+#[ubx(class = 0x06, id = 0x04, fixed_payload_len = 4)]
 struct CfgRst {
     /// Battery backed RAM sections to clear
     #[ubx(map_type = NavBbrMask)]
@@ -1329,183 +627,2176 @@ struct CfgRst {
     /// Reset Type
     #[ubx(map_type = ResetMode)]
     reset_mode: u8,
-    reserved1: u8,
+    reserved0: u8,
 }
 
-/// Reset Receiver / Clear Backup Data Structures
-#[ubx_packet_recv_send]
-#[ubx(class = 6, id = 0x13, fixed_payload_len = 4)]
-struct CfgAnt {
-    /// Antenna flag mask. See [AntFlags] for details.
-    #[ubx(map_type = AntFlags)]
-    flags: u16,
-    /// Antenna pin configuration. See 32.10.1.1 in receiver spec for details.
-    pins: u16,
+/// Reset Type
+#[repr(u8)]
+#[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum ResetMode {
+    /// Hardware reset (Watchdog) immediately
+    HardwareResetImmediately = 0,
+    ControlledSoftwareReset = 0x1,
+    ControlledSoftwareResetGpsOnly = 0x02,
+    /// Hardware reset (Watchdog) after shutdown (>=FW6.0)
+    HardwareResetAfterShutdown = 0x04,
+    ControlledGpsStop = 0x08,
+    ControlledGpsStart = 0x09,
+}
+
+impl ResetMode {
+    const fn into_raw(self) -> u8 {
+        self as u8
+    }
+}
+
+#[ubx_extend_bitflags]
+#[ubx(into_raw, rest_reserved)]
+bitflags! {
+    /// Battery backed RAM sections to clear
+    pub struct NavBbrMask: u16 {
+        const EPHEMERIS = 1;
+        const ALMANAC = 2;
+        const HEALTH = 4;
+        const KLOBUCHAR = 8;
+        const POSITION = 16;
+        const CLOCK_DRIFT = 32;
+        const OSCILLATOR_PARAMETER = 64;
+        const UTC_CORRECTION_PARAMETERS = 0x80;
+        const RTC = 0x100;
+        const SFDR_PARAMETERS = 0x800;
+        const SFDR_VEHICLE_MONITORING_PARAMETERS = 0x1000;
+        const TCT_PARAMETERS = 0x2000;
+        const AUTONOMOUS_ORBIT_PARAMETERS = 0x8000;
+    }
+}
+
+/// Predefined values for `NavBbrMask`
+#[derive(Clone, Copy)]
+#[repr(transparent)]
+pub struct NavBbrPredefinedMask(u16);
+
+impl From<NavBbrPredefinedMask> for NavBbrMask {
+    fn from(x: NavBbrPredefinedMask) -> Self {
+        Self::from_bits_truncate(x.0)
+    }
+}
+
+impl NavBbrPredefinedMask {
+    pub const HOT_START: NavBbrPredefinedMask = NavBbrPredefinedMask(0);
+    pub const WARM_START: NavBbrPredefinedMask = NavBbrPredefinedMask(1);
+    pub const COLD_START: NavBbrPredefinedMask = NavBbrPredefinedMask(0xFFFF);
+}
+
+#[ubx_packet_send]
+#[ubx(class = 0x06, id = 0x8c, max_payload_len = 260)]
+struct CfgValDel {
+    version: u8,
+
+    #[ubx(map_type = MemoryLayer)]
+    layers: u8,
+    reserved0: [u8; 2],
+    keys: &'a [KeyId],
+}
+
+#[ubx_packet_send]
+#[ubx(class = 0x06, id = 0x8c, max_payload_len = 260)]
+struct CfgValDelTransaction {
+    version: u8,
+
+    #[ubx(map_type = MemoryLayer)]
+    layers: u8,
+
+    #[ubx(map_type = Transaction)]
+    transaction: u8,
+    reserved0: u8,
+    keys: &'a [KeyId],
 }
 
 #[ubx_extend_bitflags]
 #[ubx(from, into_raw, rest_reserved)]
 bitflags! {
     #[derive(Default, Debug)]
-    pub struct AntFlags: u16 {
-        /// Enable supply voltage control signal
-        const SVCS = 0x01;
-        /// Enable short circuit detection
-        const SCD = 0x02;
-        /// Enable open circuit detection
-        const OCD = 0x04;
-        /// Power down on short circuit detection
-        const PDWN_ON_SCD = 0x08;
-        /// Enable automatic recovery from short circuit state
-        const RECOVERY = 0x10;
+    pub struct MemoryLayer: u8 {
+        const BBR = 0x01;
+        const FLASH = 0x02;
     }
 }
 
-/// TP5: "Time Pulse" Config frame (32.10.38.4)
-#[ubx_packet_recv_send]
-#[ubx(
-    class = 0x06,
-    id = 0x31,
-    fixed_payload_len = 32,
-    flags = "default_for_builder"
-)]
-struct CfgTp5 {
-    #[ubx(map_type = CfgTp5TimePulseMode, may_fail)]
-    tp_idx: u8,
-    version: u8,
-    reserved1: [u8; 2],
-    /// Antenna cable delay [ns]
-    #[ubx(map_type = f32, scale = 1.0)]
-    ant_cable_delay: i16,
-    /// RF group delay [ns]
-    #[ubx(map_type = f32, scale = 1.0)]
-    rf_group_delay: i16,
-    /// Frequency in Hz or Period in us,
-    /// depending on `flags::IS_FREQ` bit
-    #[ubx(map_type = f64, scale = 1.0)]
-    freq_period: u32,
-    /// Frequency in Hz or Period in us,
-    /// when locked to GPS time.
-    /// Only used when `flags::LOCKED_OTHER_SET` is set
-    #[ubx(map_type = f64, scale = 1.0)]
-    freq_period_lock: u32,
-    /// Pulse length or duty cycle, [us] or [*2^-32],
-    /// depending on `flags::LS_LENGTH` bit
-    #[ubx(map_type = f64, scale = 1.0)]
-    pulse_len_ratio: u32,
-    /// Pulse Length in us or duty cycle (*2^-32),
-    /// when locked to GPS time.
-    /// Only used when `flags::LOCKED_OTHER_SET` is set
-    #[ubx(map_type = f64, scale = 1.0)]
-    pulse_len_ratio_lock: u32,
-    /// User configurable time pulse delay in [ns]
-    #[ubx(map_type = f64, scale = 1.0)]
-    user_delay: i32,
-    /// Configuration flags, see [CfgTp5Flags]
-    #[ubx(map_type = CfgTp5Flags)]
-    flags: u32,
+#[ubx_extend]
+#[ubx(from_unchecked, into_raw, rest_error)]
+#[repr(u8)]
+#[derive(Clone, Copy, Debug)]
+pub enum Transaction {
+    Transactionless = 0,
+    Restart = 1,
+    Ongoing = 2,
+    End = 3,
 }
 
-/// Time pulse selection, used in CfgTp5 frame
+/// Config Get
+#[ubx_packet_send]
+#[ubx(class = 0x06, id = 0x8b, max_payload_len = 260)]
+struct CfgValGetReq<'a> {
+    /// Message version
+    version: u8,
+    /// The layer from which the configuration items should be retrieved
+    #[ubx(map_type = CfgLayer)]
+    layer: u8,
+    position: u16,
+    cfg_data: &'a [KeyId],
+}
+
+#[ubx_packet_recv]
+#[ubx(class = 0x06, id = 0x8b, max_payload_len = 520)]
+struct CfgValGetResp<'a> {
+    /// Message version
+    version: u8,
+    /// The layer from which the configuration items should be retrieved
+    #[ubx(map_type = CfgLayer, may_fail)]
+    layer: u8,
+    position: u16,
+
+    #[ubx(
+        map_type = CfgValIterParser,
+        from = CfgValIterParser::new,
+        is_valid = CfgValIterParser::is_valid,
+        may_fail,
+        get_as_ref,
+    )]
+    cfg_data: [u8; 0],
+}
+
+#[ubx_packet_recv_send]
+#[ubx(
+  class = 0x06,
+  id = 0x8a,
+  max_payload_len = 772, // 4 + (4 + 8) * 64
+)]
+struct CfgValSet<'a> {
+    /// Message version
+    version: u8,
+    /// The layers from which the configuration items should be retrieved
+    #[ubx(map_type = CfgLayerFlag)]
+    layers: u8,
+    reserved1: [u8; 2],
+    cfg_data: &'a [CfgVal],
+}
+
+#[ubx_packet_send]
+#[ubx(
+  class = 0x06,
+  id = 0x8a,
+  max_payload_len = 772, // 4 + (4 + 8) * 64
+)]
+struct CfgValSetTransaction<'a> {
+    /// Message version
+    version: u8,
+    /// The layers from which the configuration items should be retrieved
+    #[ubx(map_type = CfgLayerFlag)]
+    layers: u8,
+
+    #[ubx(map_type = Transaction)]
+    transaction: u8,
+    reserved1: u8,
+    cfg_data: &'a [CfgVal],
+}
+
+#[derive(Debug, Clone)]
+pub struct CfgValIterParser<'a> {
+    pub(crate) data: &'a [u8],
+    pub(crate) offset: usize,
+}
+
+impl<'a> CfgValIterParser<'a> {
+    pub fn new(data: &'a [u8]) -> Self {
+        Self { data, offset: 0 }
+    }
+
+    pub fn is_valid(_bytes: &'a [u8]) -> bool {
+        true
+    }
+}
+
+impl<'a> core::iter::Iterator for CfgValIterParser<'a> {
+    type Item = CfgVal;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.offset < self.data.len() {
+            let cfg_val = CfgVal::parse(&self.data[self.offset..]);
+            self.offset += cfg_val.len();
+
+            Some(cfg_val)
+        } else {
+            None
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct CfgValIter<'a> {
+    pub(crate) data: &'a [u8],
+    pub(crate) offset: usize,
+}
+
+impl<'a> CfgValIter<'a> {
+    pub fn new(data: &'a mut [u8], values: &[CfgVal]) -> Self {
+        let mut offset = 0;
+
+        for value in values {
+            offset += value.write_to(&mut data[offset..]);
+        }
+
+        Self {
+            data: &data[..offset],
+            offset: 0,
+        }
+    }
+}
+
+impl<'a> core::iter::Iterator for CfgValIter<'a> {
+    type Item = CfgVal;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.offset < self.data.len() {
+            let cfg_val = CfgVal::parse(&self.data[self.offset..]);
+
+            self.offset += cfg_val.len();
+
+            Some(cfg_val)
+        } else {
+            None
+        }
+    }
+}
+
 #[derive(Default)]
 #[ubx_extend]
 #[ubx(from_unchecked, into_raw, rest_error)]
 #[repr(u8)]
 #[derive(Clone, Copy, Debug)]
-pub enum CfgTp5TimePulseMode {
+pub enum CfgLayer {
     #[default]
-    TimePulse = 0,
-    TimePulse2 = 1,
-}
-
-/// Time MODE2 Config Frame (32.10.36.1)
-/// only available on `timing` receivers
-#[ubx_packet_recv_send]
-#[ubx(
-    class = 0x06,
-    id = 0x3d,
-    fixed_payload_len = 28,
-    flags = "default_for_builder"
-)]
-struct CfgTmode2 {
-    /// Time transfer modes, see [CfgTmode2TimeXferModes] for details
-    #[ubx(map_type = CfgTmode2TimeXferModes, may_fail)]
-    time_transfer_mode: u8,
-    reserved1: u8,
-    #[ubx(map_type = CfgTmode2Flags)]
-    flags: u16,
-    /// WGS84 ECEF.x coordinate in [m] or latitude in [deg° *1E-5],
-    /// depending on `flags` field
-    #[ubx(map_type = f64, scale = 1e-2)]
-    ecef_x_or_lat: i32,
-    /// WGS84 ECEF.y coordinate in [m] or longitude in [deg° *1E-5],
-    /// depending on `flags` field
-    #[ubx(map_type = f64, scale = 1e-2)]
-    ecef_y_or_lon: i32,
-    /// WGS84 ECEF.z coordinate or altitude, both in [m],
-    /// depending on `flags` field
-    #[ubx(map_type = f64, scale = 1e-2)]
-    ecef_z_or_alt: i32,
-    /// Fixed position 3D accuracy in [m]
-    #[ubx(map_type = f64, scale = 1e-3)]
-    fixed_pos_acc: u32,
-    /// Survey in minimum duration in [s]
-    survey_in_min_duration: u32,
-    /// Survey in position accuracy limit in [m]
-    #[ubx(map_type = f64, scale = 1e-3)]
-    survery_in_accur_limit: u32,
-}
-
-/// Time transfer modes (32.10.36)
-#[derive(Default)]
-#[ubx_extend]
-#[ubx(from_unchecked, into_raw, rest_error)]
-#[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum CfgTmode2TimeXferModes {
-    #[default]
-    Disabled = 0,
-    SurveyIn = 1,
-    /// True position information required
-    /// when using `fixed mode`
-    FixedMode = 2,
+    RAM = 0,
+    BRR = 1,
+    Flash = 2,
+    Default = 7,
 }
 
 #[ubx_extend_bitflags]
 #[ubx(from, into_raw, rest_reserved)]
 bitflags! {
     #[derive(Default, Debug)]
-    pub struct CfgTmode2Flags :u16 {
-        /// Position given in LAT/LON/ALT
-        /// default being WGS84 ECEF
-        const LLA = 0x01;
-        /// In case LLA was set, Altitude value is not valid
-        const ALT_INVALID = 0x02;
+    pub struct CfgLayerFlag: u8 {
+        const RAM = 0x01;
+        const BBR = 0x02;
+        const FLASH = 0x04;
     }
 }
 
-/// Time mode survey-in status
 #[ubx_packet_recv]
-#[ubx(class = 0x0d, id = 0x04, fixed_payload_len = 28)]
-struct TimSvin {
-    /// Passed survey-in minimum duration
-    /// Units: s
-    dur: u32,
-    /// Current survey-in mean position ECEF X coordinate
-    mean_x: i32,
-    /// Current survey-in mean position ECEF Y coordinate
-    mean_y: i32,
-    /// Current survey-in mean position ECEF Z coordinate
-    mean_z: i32,
-    /// Current survey-in mean position 3D variance
-    mean_v: i32,
-    /// Number of position observations used during survey-in
-    obs: u32,
-    /// Survey-in position validity flag, 1 = valid, otherwise 0
+#[ubx(class = 0x21, id = 0x11, fixed_payload_len = 100)]
+struct LogBatch {
+    version: u8,
+
+    #[ubx(map_type = ContentValid)]
+    content_valid: u8,
+    msg_cnt: u16,
+    i_tow: u32,
+    year: u16,
+    month: u8,
+    day: u8,
+    hour: u8,
+    min: u8,
+    sec: u8,
+
+    #[ubx(map_type = TimeValid)]
     valid: u8,
-    /// Survey-in in progress flag, 1 = in-progress, otherwise 0
-    active: u8,
-    reserved: [u8; 2],
+    t_acc: u32,
+    frac_sec: i32,
+
+    #[ubx(map_type = GpsFix)]
+    fix_type: u8,
+
+    #[ubx(map_type = NavPvtFlags)]
+    flags: u8,
+    flags2: u8,
+
+    num_satellites: u8,
+
+    lon: i32,
+    lat: i32,
+    height: i32,
+    h_msl: i32,
+    h_acc: u32,
+    v_acc: u32,
+    vel_n: i32,
+    vel_e: i32,
+    vel_d: i32,
+    g_speed: i32,
+    head_mot: i32,
+    s_acc: u32,
+    head_acc: u32,
+    pdop: u16,
+    reserved0: [u8; 2],
+    distance: u32,
+    total_distance: u32,
+    distance_std: u32,
+    reserved1: [u8; 4],
+}
+
+#[ubx_packet_send]
+#[ubx(class = 0x21, id = 0x10, fixed_payload_len = 4)]
+struct LogRetrieveBatch {
+    version: u8,
+
+    #[ubx(map_type = RetrieveBatchFlags)]
+    flags: u8,
+    reserved0: [u8; 2],
+}
+
+#[ubx_extend_bitflags]
+#[ubx(from, into_raw, rest_reserved)]
+bitflags! {
+    #[derive(Default, Debug)]
+    pub struct RetrieveBatchFlags: u8 {
+        const SENDMON = 0x01;
+    }
+}
+
+#[ubx_extend_bitflags]
+#[ubx(from, into_raw, rest_reserved)]
+bitflags! {
+    #[derive(Default, Debug)]
+    pub struct ContentValid: u8 {
+        /// Enable supply voltage control signal
+        const EXTRAPVT = 0x01;
+        /// Enable short circuit detection
+        const EXTRAODO = 0x02;
+    }
+}
+
+#[ubx_extend_bitflags]
+#[ubx(from, into_raw, rest_reserved)]
+bitflags! {
+    #[derive(Default, Debug)]
+    pub struct TimeValid: u8 {
+        /// Enable supply voltage control signal
+        const DATE = 0x01;
+        /// Enable short circuit detection
+        const TIME = 0x02;
+    }
+}
+
+#[ubx_packet_recv]
+#[ubx(class = 0x0a, id = 0x32, fixed_payload_len = 12)]
+struct MonBatch {
+    version: u8,
+    reserved0: [u8; 3],
+    fill_level: u16,
+    drops_all: u16,
+    drops_since_mon: u16,
+    next_msg_cnt: u16,
+}
+
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+pub struct PortInfo {
+    pub port_id: u16,
+    pub tx_pending: u16,
+    pub tx_bytes: u32,
+    pub tx_usage: u8,
+    pub tx_peak_usage: u8,
+    pub rx_pending: u16,
+    pub rx_bytes: u32,
+    pub rx_usage: u8,
+    pub rx_peak_usage: u8,
+    pub overrun_errors: u16,
+    pub msgs: [u16; 4],
+    pub reserved1: [u8; 8],
+    pub skipped: u32,
+}
+
+#[derive(Debug, Clone)]
+pub struct PortInfoIter<'a>(core::slice::ChunksExact<'a, u8>);
+
+impl<'a> PortInfoIter<'a> {
+    fn new(bytes: &'a [u8]) -> Self {
+        Self(bytes.chunks_exact(40))
+    }
+
+    fn is_valid(bytes: &'a [u8]) -> bool {
+        bytes.len() % 40 == 0
+    }
+}
+
+impl<'a> core::iter::Iterator for PortInfoIter<'a> {
+    type Item = PortInfo;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let chunk = self.0.next()?;
+        Some(PortInfo {
+            port_id: u16::from_le_bytes(chunk[0..2].try_into().unwrap()),
+            tx_pending: u16::from_le_bytes(chunk[2..4].try_into().unwrap()),
+            tx_bytes: u32::from_le_bytes(chunk[4..8].try_into().unwrap()),
+            tx_usage: chunk[8],
+            tx_peak_usage: chunk[9],
+            rx_pending: u16::from_le_bytes(chunk[10..12].try_into().unwrap()),
+            rx_bytes: u32::from_le_bytes(chunk[12..16].try_into().unwrap()),
+            rx_usage: chunk[16],
+            rx_peak_usage: chunk[17],
+            overrun_errors: u16::from_le_bytes(chunk[18..20].try_into().unwrap()),
+            msgs: [
+                u16::from_le_bytes(chunk[20..22].try_into().unwrap()),
+                u16::from_le_bytes(chunk[22..24].try_into().unwrap()),
+                u16::from_le_bytes(chunk[24..26].try_into().unwrap()),
+                u16::from_le_bytes(chunk[26..28].try_into().unwrap()),
+            ],
+            reserved1: [0; 8],
+            skipped: u32::from_le_bytes(chunk[36..40].try_into().unwrap()),
+        })
+    }
+}
+
+#[ubx_packet_recv]
+#[ubx(class = 0x0a, id = 0x36, max_payload_len = 248)]
+struct MonComms {
+    version: u8,
+    num_ports: u8,
+
+    #[ubx(map_type = TxErrors)]
+    tx_errors: u8,
+
+    reserved0: u8,
+    port_ids: [u8; 4],
+
+    #[ubx(
+        map_type = PortInfoIter,
+        from = PortInfoIter::new,
+        size_fn = data_len,
+        is_valid = PortInfoIter::is_valid,
+        may_fail,
+    )]
+    ports: [u8; 0],
+}
+
+impl<'a> MonCommsRef<'a> {
+    fn data_len(&self) -> usize {
+        (self.num_ports() * 40).into()
+    }
+}
+
+#[ubx_extend_bitflags]
+#[ubx(from, into_raw, rest_reserved)]
+bitflags! {
+    #[derive(Default, Debug)]
+    pub struct TxErrors: u8 {
+        const MEMORY = 0x01;
+        const ALLOCATION = 0x02;
+    }
+}
+
+#[ubx_packet_recv]
+#[ubx(class = 0x0a, id = 0x28, fixed_payload_len = 8)]
+struct MonGnss {
+    version: u8,
+
+    #[ubx(map_type = GNSSOption)]
+    supported: u8,
+
+    #[ubx(map_type = GNSSOption)]
+    default_gnss: u8,
+
+    #[ubx(map_type = GNSSOption)]
+    enabled: u8,
+    simultaneous: u8,
+    reserved: [u8; 3],
+}
+
+#[ubx_extend_bitflags]
+#[ubx(from, into_raw, rest_reserved)]
+bitflags! {
+    #[derive(Default, Debug)]
+    pub struct GNSSOption: u8 {
+        const GPS = 0x01;
+        const GLONASS = 0x02;
+        const BEIDOU = 0x04;
+        const GALILEO = 0x08;
+    }
+}
+
+#[repr(transparent)]
+#[derive(Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+pub struct MonHwFlags(u16);
+
+impl MonHwFlags {
+    pub fn periph_pio(self) -> bool {
+        (self.0 >> 0) & 0x0001 != 0
+    }
+
+    pub fn pin_bank(self) -> PinBank {
+        let bits = self.0 & 0x0E;
+        match bits {
+            0 => PinBank::A,
+            1 => PinBank::B,
+            2 => PinBank::C,
+            3 => PinBank::D,
+            4 => PinBank::E,
+            5 => PinBank::F,
+            6 => PinBank::G,
+            7 => PinBank::H,
+            _ => {
+                panic!("Unexpected 3-bit bitfield value {}!", bits);
+            },
+        }
+    }
+
+    pub fn direction(self) -> bool {
+        (self.0 >> 4) & 0x0001 != 0
+    }
+
+    pub fn value(self) -> bool {
+        (self.0 >> 5) & 0x0001 != 0
+    }
+
+    pub fn vp_manager(self) -> bool {
+        (self.0 >> 6) & 0x0001 != 0
+    }
+
+    pub fn pio_irq(self) -> bool {
+        (self.0 >> 7) & 0x0001 != 0
+    }
+
+    pub fn pio_pull_high(self) -> bool {
+        (self.0 >> 8) & 0x0001 != 0
+    }
+
+    pub fn pio_pull_low(self) -> bool {
+        (self.0 >> 9) & 0x0001 != 0
+    }
+
+    pub const fn from(x: u16) -> Self {
+        Self(x)
+    }
+}
+
+impl fmt::Debug for MonHwFlags {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("MonHwFlags")
+            .field("PeriphPIO", &self.periph_pio())
+            .field("PinBank", &self.pin_bank())
+            .field("Direction", &self.direction())
+            .field("Value", &self.value())
+            .field("VPManager", &self.vp_manager())
+            .field("PIOIRQ", &self.pio_irq())
+            .field("PIOPullHigh", &self.pio_pull_high())
+            .field("PIOPullLow", &self.pio_pull_low())
+            .finish()
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum PinBank {
+    A,
+    B,
+    C,
+    D,
+    E,
+    F,
+    G,
+    H,
+}
+
+#[ubx_extend_bitflags]
+#[ubx(from, into_raw, rest_reserved)]
+bitflags! {
+    #[derive(Default, Debug)]
+    pub struct PinFlags: u8 {
+        const RTCCALIB = 0x01;
+        const SAFEBOOT = 0x02;
+        const XTALABSENT = 0x04;
+    }
+}
+
+#[ubx_packet_recv]
+#[ubx(class = 0x0a, id = 0x37, fixed_payload_len = 6)]
+struct PinInfo {
+    reserved1: u8,
+    pin_id: u8,
+
+    #[ubx(map_type = MonHwFlags)]
+    flags: u16,
+
+    virtual_pin_mapping: u8,
+    reserved2: u8,
+}
+
+#[derive(Debug, Clone)]
+pub struct MonHWIter<'a> {
+    data: &'a [u8],
+    offset: usize,
+}
+
+impl<'a> MonHWIter<'a> {
+    fn new(data: &'a [u8]) -> Self {
+        Self { data, offset: 0 }
+    }
+
+    fn is_valid(bytes: &'a [u8]) -> bool {
+        bytes.len() % 6 == 0
+    }
+}
+
+impl<'a> core::iter::Iterator for MonHWIter<'a> {
+    type Item = PinInfoRef<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.offset < self.data.len() {
+            let data = &self.data[self.offset..self.offset + 6];
+            self.offset += 6;
+            Some(PinInfoRef(data))
+        } else {
+            None
+        }
+    }
+}
+
+#[ubx_packet_recv]
+#[ubx(class = 0x0a, id = 0x37, max_payload_len = 144)]
+struct MonHw3 {
+    version: u8,
+    num_pins: u8,
+
+    #[ubx(map_type = PinFlags)]
+    flags: u8,
+    #[ubx(map_type = &str, may_fail, from = mon_ver::convert_to_str_unchecked,
+        is_valid = mon_ver::is_cstr_valid, get_as_ref)]
+    hw_version: [u8; 10],
+    reserved0: [u8; 9],
+
+    #[ubx(
+        map_type = MonHWIter,
+        from = MonHWIter::new,
+        size_fn = data_len,
+        is_valid = MonHWIter::is_valid,
+        may_fail,
+        get_as_ref,
+    )]
+    pins: [u8; 0],
+}
+
+impl<'a> MonHw3Ref<'a> {
+    fn data_len(&self) -> usize {
+        (self.num_pins() * 6).into()
+    }
+}
+
+#[repr(transparent)]
+#[derive(Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+pub struct MonPatchFlags(u32);
+
+impl MonPatchFlags {
+    pub fn activated(self) -> bool {
+        (self.0 >> 0) & 0x00000001 != 0
+    }
+
+    pub fn location(self) -> PatchLocation {
+        let bits = (self.0 >> 1) & 0x03;
+        match bits {
+            0 => PatchLocation::EFuse,
+            1 => PatchLocation::ROM,
+            2 => PatchLocation::BBR,
+            3 => PatchLocation::FileSystem,
+            _ => {
+                panic!("Unexpected 2-bit bitfield value {}!", bits);
+            },
+        }
+    }
+
+    pub const fn from(x: u32) -> Self {
+        Self(x)
+    }
+}
+
+impl fmt::Debug for MonPatchFlags {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("MonPatchFlags")
+            .field("Activated", &self.activated())
+            .field("Location", &self.location())
+            .finish()
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum PatchLocation {
+    EFuse,
+    ROM,
+    BBR,
+    FileSystem,
+}
+
+#[ubx_packet_recv]
+#[ubx(class = 0x0a, id = 0x27, fixed_payload_len = 16)]
+struct PatchInfo {
+    #[ubx(map_type = MonPatchFlags)]
+    patch_info: u32,
+    comparator_number: u32,
+    patch_address: u32,
+    patch_data: u32,
+}
+
+#[derive(Debug, Clone)]
+pub struct MonPatchIter<'a> {
+    data: &'a [u8],
+    offset: usize,
+}
+
+impl<'a> MonPatchIter<'a> {
+    fn new(data: &'a [u8]) -> Self {
+        Self { data, offset: 0 }
+    }
+
+    fn is_valid(bytes: &'a [u8]) -> bool {
+        bytes.len() % 16 == 0
+    }
+}
+
+impl<'a> core::iter::Iterator for MonPatchIter<'a> {
+    type Item = PatchInfoRef<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.offset < self.data.len() {
+            let data = &self.data[self.offset..self.offset + 16];
+            self.offset += 16;
+            Some(PatchInfoRef(data))
+        } else {
+            None
+        }
+    }
+}
+
+#[ubx_packet_recv]
+#[ubx(class = 0x0a, id = 0x27, max_payload_len = 324)]
+struct MonPatch {
+    version: u16,
+    num_entries: u16,
+
+    #[ubx(
+        map_type = MonPatchIter,
+        from = MonPatchIter::new,
+        size_fn = data_len,
+        is_valid = MonPatchIter::is_valid,
+        may_fail,
+        get_as_ref,
+    )]
+    pins: [u8; 0],
+}
+
+impl<'a> MonPatchRef<'a> {
+    fn data_len(&self) -> usize {
+        (self.num_entries() * 16).into()
+    }
+}
+
+#[repr(transparent)]
+#[derive(Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+pub struct MonRfFlags(u8);
+
+impl MonRfFlags {
+    pub fn jamming_state(self) -> JammingState {
+        let bits = (self.0 >> 1) & 0x03;
+        match bits {
+            0 => JammingState::Unknown,
+            1 => JammingState::Ok,
+            2 => JammingState::Interference,
+            3 => JammingState::Critical,
+            _ => {
+                panic!("Unexpected 2-bit bitfield value {}!", bits);
+            },
+        }
+    }
+
+    pub const fn from(x: u8) -> Self {
+        Self(x)
+    }
+}
+
+impl fmt::Debug for MonRfFlags {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("MonPatchFlags")
+            .field("JammingState", &self.jamming_state())
+            .finish()
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum JammingState {
+    Unknown,
+    Ok,
+    Interference,
+    Critical,
+}
+
+#[ubx_packet_recv]
+#[ubx(class = 0x0a, id = 0x38, fixed_payload_len = 24)]
+struct RfInfo {
+    block_id: u8,
+
+    #[ubx(map_type = MonRfFlags)]
+    patch_info: u8,
+
+    ant_status: u8,
+    ant_power: u8,
+    post_status: u32,
+    reserved1: [u8; 4],
+    noise_per_ms: u16,
+    agc_cnt: u16,
+    cw_suppression: u8,
+    of_si: i8,
+    mag_i: u8,
+    of_sq: i8,
+    mag_q: u8,
+    reserved2: [u8; 3],
+}
+
+#[derive(Debug, Clone)]
+pub struct MonRfIter<'a> {
+    data: &'a [u8],
+    offset: usize,
+}
+
+impl<'a> MonRfIter<'a> {
+    fn new(data: &'a [u8]) -> Self {
+        Self { data, offset: 0 }
+    }
+
+    fn is_valid(bytes: &'a [u8]) -> bool {
+        bytes.len() % 24 == 0
+    }
+}
+
+impl<'a> core::iter::Iterator for MonRfIter<'a> {
+    type Item = RfInfoRef<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.offset < self.data.len() {
+            let data = &self.data[self.offset..self.offset + 24];
+            self.offset += 24;
+            Some(RfInfoRef(data))
+        } else {
+            None
+        }
+    }
+}
+
+#[ubx_packet_recv]
+#[ubx(class = 0x0a, id = 0x38, max_payload_len = 364)]
+struct MonRf {
+    version: u8,
+    num_blocks: u8,
+    reserved0: [u8; 2],
+
+    #[ubx(
+        map_type = MonRfIter,
+        from = MonRfIter::new,
+        size_fn = data_len,
+        is_valid = MonRfIter::is_valid,
+        may_fail,
+        get_as_ref,
+    )]
+    blocks: [u8; 0],
+}
+
+impl<'a> MonRfRef<'a> {
+    fn data_len(&self) -> usize {
+        (self.num_blocks() * 24).into()
+    }
+}
+
+#[ubx_extend_bitflags]
+#[ubx(from, into_raw, rest_reserved)]
+bitflags! {
+    #[derive(Default, Debug)]
+    pub struct RxrFlags: u8 {
+        const AWAKE = 0x01;
+    }
+}
+
+#[ubx_packet_recv]
+#[ubx(class = 0x0a, id = 0x21, fixed_payload_len = 1)]
+struct MonRxr {
+    #[ubx(map_type = RxrFlags)]
+    flags: u8,
+}
+
+#[derive(Debug, Clone)]
+pub struct MonVerExtensionIter<'a> {
+    data: &'a [u8],
+    offset: usize,
+}
+
+impl<'a> MonVerExtensionIter<'a> {
+    fn new(data: &'a [u8]) -> Self {
+        Self { data, offset: 0 }
+    }
+
+    fn is_valid(payload: &[u8]) -> bool {
+        payload.len() % 30 == 0 && payload.chunks(30).all(is_cstr_valid)
+    }
+}
+
+impl<'a> core::iter::Iterator for MonVerExtensionIter<'a> {
+    type Item = &'a str;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.offset < self.data.len() {
+            let data = &self.data[self.offset..self.offset + 30];
+            self.offset += 30;
+            Some(mon_ver::convert_to_str_unchecked(data))
+        } else {
+            None
+        }
+    }
+}
+
+/// Receiver/Software Version
+#[ubx_packet_recv]
+#[ubx(class = 0x0a, id = 0x04, max_payload_len = 1240)]
+struct MonVer {
+    #[ubx(map_type = &str, may_fail, from = mon_ver::convert_to_str_unchecked,
+          is_valid = mon_ver::is_cstr_valid, get_as_ref)]
+    software_version: [u8; 30],
+    #[ubx(map_type = &str, may_fail, from = mon_ver::convert_to_str_unchecked,
+          is_valid = mon_ver::is_cstr_valid, get_as_ref)]
+    hardware_version: [u8; 10],
+
+    /// Extended software information strings
+    #[ubx(map_type = MonVerExtensionIter, may_fail,
+          from = MonVerExtensionIter::new,
+          is_valid = MonVerExtensionIter::is_valid)]
+    extension: [u8; 0],
+}
+
+mod mon_ver {
+    pub(crate) fn convert_to_str_unchecked(bytes: &[u8]) -> &str {
+        let null_pos = bytes
+            .iter()
+            .position(|x| *x == 0)
+            .expect("is_cstr_valid bug?");
+        core::str::from_utf8(&bytes[0..null_pos])
+            .expect("is_cstr_valid should have prevented this code from running")
+    }
+
+    pub(crate) fn is_cstr_valid(bytes: &[u8]) -> bool {
+        let null_pos = match bytes.iter().position(|x| *x == 0) {
+            Some(pos) => pos,
+            None => {
+                return false;
+            },
+        };
+        core::str::from_utf8(&bytes[0..null_pos]).is_ok()
+    }
+}
+
+// UBX-NAV
+
+#[ubx_packet_recv]
+#[ubx(class = 0x01, id = 0x60, fixed_payload_len = 16)]
+struct NavAopStatus {
+    i_tow: u32,
+    aop_cfg: u8,
+    status: u8,
+    reserved0: [u8; 10],
+}
+
+#[ubx_packet_recv]
+#[ubx(class = 0x01, id = 0x22, fixed_payload_len = 20)]
+struct NavClock {
+    i_tow: u32,
+    clk_bias: i32,
+    clk_drift: i32,
+    time_acc: u32,
+    freq_acc: u32,
+}
+
+#[ubx_packet_recv]
+#[ubx(class = 0x01, id = 0x36, fixed_payload_len = 64)]
+struct NavCov {
+    i_tow: u32,
+    version: u8,
+    pos_cov_valid: u8,
+    vel_cov_valid: u8,
+    reserved0: [u8; 9],
+    pos_cov_nn: f32,
+    pos_cov_ne: f32,
+    pos_cov_nd: f32,
+    pos_cov_ee: f32,
+    pos_cov_ed: f32,
+    pos_cov_dd: f32,
+    vel_cov_nn: f32,
+    vel_cov_ne: f32,
+    vel_cov_nd: f32,
+    vel_cov_ee: f32,
+    vel_cov_ed: f32,
+    vel_cov_dd: f32,
+}
+
+#[ubx_packet_recv]
+#[ubx(class = 0x01, id = 0x04, fixed_payload_len = 18)]
+struct NavDop {
+    i_tow: u32,
+    #[ubx(map_type = f32, scale = 1e-2)]
+    gdop: u16,
+    #[ubx(map_type = f32, scale = 1e-2)]
+    pdop: u16,
+    #[ubx(map_type = f32, scale = 1e-2)]
+    tdop: u16,
+    #[ubx(map_type = f32, scale = 1e-2)]
+    vdop: u16,
+    #[ubx(map_type = f32, scale = 1e-2)]
+    hdop: u16,
+    #[ubx(map_type = f32, scale = 1e-2)]
+    ndop: u16,
+    #[ubx(map_type = f32, scale = 1e-2)]
+    edop: u16,
+}
+
+/// End of Epoch Marker
+#[ubx_packet_recv]
+#[ubx(class = 0x01, id = 0x61, fixed_payload_len = 4)]
+struct NavEoe {
+    /// GPS time of week for navigation epoch
+    itow: u32,
+}
+
+/// Odometer solution
+#[ubx_packet_recv]
+#[ubx(class = 0x01, id = 0x09, fixed_payload_len = 20)]
+struct NavOdo {
+    version: u8,
+    reserved: [u8; 3],
+    i_tow: u32,
+    distance: u32,
+    total_distance: u32,
+    distance_std: u32,
+}
+
+#[repr(transparent)]
+#[derive(Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+pub struct SatelliteFlags(u8);
+
+impl SatelliteFlags {
+    pub fn health(self) -> SatelliteHealth {
+        let bits = (self.0 >> 0) & 0x03;
+        match bits {
+            0 => SatelliteHealth::Unknown,
+            1 => SatelliteHealth::Healthy,
+            2 => SatelliteHealth::NotHealthy,
+            _ => {
+                panic!("Unexpected 2-bit bitfield value {}!", bits);
+            },
+        }
+    }
+
+    pub fn visibility(self) -> SatelliteVisibility {
+        let bits = (self.0 >> 2) & 0x03;
+        match bits {
+            0 => SatelliteVisibility::Unknown,
+            1 => SatelliteVisibility::BelowHorizon,
+            2 => SatelliteVisibility::AboveHorizon,
+            3 => SatelliteVisibility::AboveElevationMask,
+            _ => {
+                panic!("Unexpected 2-bit bitfield value {}!", bits);
+            },
+        }
+    }
+
+    pub const fn from(x: u8) -> Self {
+        Self(x)
+    }
+}
+
+impl fmt::Debug for SatelliteFlags {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("SatelliteFlags")
+            .field("SatelliteHealth", &self.health())
+            .field("SatelliteVisibility", &self.visibility())
+            .finish()
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum SatelliteHealth {
+    Unknown,
+    Healthy,
+    NotHealthy,
+}
+
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum SatelliteVisibility {
+    Unknown,
+    BelowHorizon,
+    AboveHorizon,
+    AboveElevationMask,
+}
+
+#[repr(transparent)]
+#[derive(Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+pub struct EphemerisData(u8);
+
+impl EphemerisData {
+    pub fn usability(self) -> EphemerisUsability {
+        let bits = (self.0 >> 0) & 0x1F;
+        match bits {
+            31 => EphemerisUsability::Unknown,
+            30 => EphemerisUsability::Max,
+            1..=29 => EphemerisUsability::Usable(bits as u16 * 15),
+            0 => EphemerisUsability::Unusable,
+            _ => {
+                panic!("Unexpected 5-bit bitfield value {}!", bits);
+            },
+        }
+    }
+
+    pub fn source(self) -> EphemerisSource {
+        let bits = (self.0 >> 5) & 0x07;
+        match bits {
+            0 => EphemerisSource::NotAvailable,
+            1 => EphemerisSource::GnssTransmission,
+            2 => EphemerisSource::ExternalAiding,
+            3..=7 => EphemerisSource::Other(bits),
+            _ => {
+                panic!("Unexpected 3-bit bitfield value {}!", bits);
+            },
+        }
+    }
+
+    pub const fn from(x: u8) -> Self {
+        Self(x)
+    }
+}
+
+impl fmt::Debug for EphemerisData {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("EphemerisData")
+            .field("EphemerisUsability", &self.usability())
+            .field("EphemerisSource", &self.source())
+            .finish()
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum EphemerisUsability {
+    Unknown,
+    Max,
+    Usable(u16),
+    Unusable,
+}
+
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum EphemerisSource {
+    NotAvailable,
+    GnssTransmission,
+    ExternalAiding,
+    Other(u8),
+}
+
+#[repr(transparent)]
+#[derive(Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+pub struct AlmanacData(u8);
+
+impl AlmanacData {
+    pub fn usability(self) -> AlmanacUsability {
+        let bits = (self.0 >> 0) & 0x1F;
+        match bits {
+            31 => AlmanacUsability::Unknown,
+            30 => AlmanacUsability::Max,
+            1..=29 => AlmanacUsability::Usable(bits),
+            0 => AlmanacUsability::Unusable,
+            _ => {
+                panic!("Unexpected 5-bit bitfield value {}!", bits);
+            },
+        }
+    }
+
+    pub fn source(self) -> AlmanacSource {
+        let bits = (self.0 >> 5) & 0x07;
+        match bits {
+            0 => AlmanacSource::NotAvailable,
+            1 => AlmanacSource::GnssTransmission,
+            2 => AlmanacSource::ExternalAiding,
+            3..=7 => AlmanacSource::Other(bits),
+            _ => {
+                panic!("Unexpected 3-bit bitfield value {}!", bits);
+            },
+        }
+    }
+
+    pub const fn from(x: u8) -> Self {
+        Self(x)
+    }
+}
+
+impl fmt::Debug for AlmanacData {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("AlmanacData")
+            .field("AlmanacUsability", &self.usability())
+            .field("AlmanacSource", &self.source())
+            .finish()
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum AlmanacUsability {
+    Unknown,
+    Max,
+    Usable(u8),
+    Unusable,
+}
+
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum AlmanacSource {
+    NotAvailable,
+    GnssTransmission,
+    ExternalAiding,
+    Other(u8),
+}
+
+#[repr(transparent)]
+#[derive(Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+pub struct OrbitData(u8);
+
+impl OrbitData {
+    pub fn usability(self) -> OrbitUsability {
+        let bits = (self.0 >> 0) & 0x1F;
+        match bits {
+            31 => OrbitUsability::Unknown,
+            30 => OrbitUsability::Max,
+            1..=29 => OrbitUsability::Usable(bits),
+            0 => OrbitUsability::Unusable,
+            _ => {
+                panic!("Unexpected 5-bit bitfield value {}!", bits);
+            },
+        }
+    }
+
+    pub fn data_type(self) -> OrbitDataType {
+        let bits = (self.0 >> 5) & 0x07;
+        match bits {
+            0 => OrbitDataType::NotAvailable,
+            1 => OrbitDataType::AssistNowOffline,
+            2 => OrbitDataType::AssistNowAutonomous,
+            3..=7 => OrbitDataType::Other(bits),
+            _ => {
+                panic!("Unexpected 3-bit bitfield value {}!", bits);
+            },
+        }
+    }
+
+    pub const fn from(x: u8) -> Self {
+        Self(x)
+    }
+}
+
+impl fmt::Debug for OrbitData {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("OrbitData")
+            .field("OrbitUsability", &self.usability())
+            .field("OrbitDataType", &self.data_type())
+            .finish()
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum OrbitUsability {
+    Unknown,
+    Max,
+    Usable(u8),
+    Unusable,
+}
+
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum OrbitDataType {
+    NotAvailable,
+    AssistNowOffline,
+    AssistNowAutonomous,
+    Other(u8),
+}
+
+#[ubx_packet_recv]
+#[ubx(class = 0x01, id = 0x34, fixed_payload_len = 6)]
+struct OrbInfo {
+    gnss_id: u8,
+    sv_id: u8,
+    #[ubx(map_type = SatelliteFlags)]
+    sv_flag: u8,
+    #[ubx(map_type = EphemerisData)]
+    eph: u8,
+    #[ubx(map_type = AlmanacData)]
+    alm: u8,
+    #[ubx(map_type = OrbitData)]
+    other: u8,
+}
+
+#[derive(Debug, Clone)]
+pub struct NavOrbIter<'a> {
+    data: &'a [u8],
+    offset: usize,
+}
+
+impl<'a> NavOrbIter<'a> {
+    fn new(data: &'a [u8]) -> Self {
+        Self { data, offset: 0 }
+    }
+
+    fn is_valid(bytes: &'a [u8]) -> bool {
+        bytes.len() % 6 == 0
+    }
+}
+
+impl<'a> core::iter::Iterator for NavOrbIter<'a> {
+    type Item = OrbInfoRef<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.offset < self.data.len() {
+            let data = &self.data[self.offset..self.offset + 6];
+            self.offset += 6;
+            Some(OrbInfoRef(data))
+        } else {
+            None
+        }
+    }
+}
+
+#[ubx_packet_recv]
+#[ubx(class = 0x01, id = 0x34, max_payload_len = 608)]
+struct NavOrb {
+    i_tow: u32,
+    version: u8,
+    num_sv: u8,
+    reserved0: [u8; 2],
+
+    #[ubx(
+        map_type = NavOrbIter,
+        from = NavOrbIter::new,
+        size_fn = data_len,
+        is_valid = NavOrbIter::is_valid,
+        may_fail,
+        get_as_ref,
+    )]
+    satellites: [u8; 0],
+}
+
+impl<'a> NavOrbRef<'a> {
+    fn data_len(&self) -> usize {
+        (self.num_sv() * 6).into()
+    }
+}
+
+/// Protection level information
+#[ubx_packet_recv]
+#[ubx(class = 0x01, id = 0x62, fixed_payload_len = 52)]
+struct NavPl {
+    msg_version: u8,
+    tmir_coeff: u8,
+    timr_exp: i8,
+
+    #[ubx(map_type = PLValid, may_fail)]
+    pl_pos_valid: u8,
+    #[ubx(map_type = PLFrame, may_fail)]
+    pl_pos_frame: u8,
+    #[ubx(map_type = PLValid, may_fail)]
+    pl_vel_valid: u8,
+    #[ubx(map_type = PLFrame, may_fail)]
+    pl_vel_frame: u8,
+    #[ubx(map_type = PLValid, may_fail)]
+    pl_time_valid: u8,
+
+    pl_pos_invalidity_reason: u8,
+    pl_vel_invalidity_reason: u8,
+    pl_time_invalidity_reason: u8,
+
+    reserved: u8,
+    i_tow: u32,
+    pl_pos1: u32,
+    pl_pos2: u32,
+    pl_pos3: u32,
+    pl_vel1: u32,
+    pl_vel2: u32,
+    pl_vel3: u32,
+
+    #[ubx(map_type = f32, scale = 1e-2)]
+    pl_pos_horiz_orient: u16,
+    #[ubx(map_type = f32, scale = 1e-2)]
+    pl_vel_horiz_orient: u16,
+
+    pl_time: u32,
+    reserved1: [u8; 4],
+}
+
+#[ubx_extend]
+#[ubx(from_unchecked, into_raw, rest_error)]
+#[repr(u8)]
+#[derive(Clone, Copy, Debug)]
+pub enum PLValid {
+    Invalid = 0,
+    Valid = 1,
+}
+
+#[ubx_extend]
+#[ubx(from_unchecked, into_raw, rest_error)]
+#[repr(u8)]
+#[derive(Clone, Copy, Debug)]
+pub enum PLFrame {
+    Invalid = 0,
+    NorthEastDown = 1,
+    LongitudinalLateralVertical = 2,
+    HorizSemiMajorAxisHorizSemiMinorAxisVertical = 3,
+}
+
+/// Position solution in ECEF
+#[ubx_packet_recv]
+#[ubx(class = 0x01, id = 0x01, fixed_payload_len = 20)]
+struct NavPosEcef {
+    i_tow: u32,
+    ecef_x: i32,
+    ecef_y: i32,
+    ecef_z: i32,
+    p_acc: u32,
+}
+
+/// Geodetic Position Solution
+#[ubx_packet_recv]
+#[ubx(class = 0x01, id = 0x02, fixed_payload_len = 28)]
+struct NavPosLlh {
+    /// GPS Millisecond Time of Week
+    itow: u32,
+
+    /// Longitude
+    #[ubx(map_type = f64, scale = 1e-7, alias = lon_degrees)]
+    lon: i32,
+
+    /// Latitude
+    #[ubx(map_type = f64, scale = 1e-7, alias = lat_degrees)]
+    lat: i32,
+
+    /// Height above Ellipsoid
+    #[ubx(map_type = f64, scale = 1e-3)]
+    height_meters: i32,
+
+    /// Height above mean sea level
+    #[ubx(map_type = f64, scale = 1e-3)]
+    height_msl: i32,
+
+    /// Horizontal Accuracy Estimate
+    #[ubx(map_type = f64, scale = 1e-3)]
+    h_acc: u32,
+
+    /// Vertical Accuracy Estimate
+    #[ubx(map_type = f64, scale = 1e-3)]
+    v_acc: u32,
+}
+
+/// Navigation Position Velocity Time Solution
+#[ubx_packet_recv]
+#[ubx(class = 1, id = 0x07, fixed_payload_len = 92)]
+struct NavPvt {
+    /// GPS Millisecond Time of Week
+    itow: u32,
+    year: u16,
+    month: u8,
+    day: u8,
+    hour: u8,
+    min: u8,
+    sec: u8,
+    #[ubx(map_type = PvtValidFlags)]
+    valid: u8,
+    time_accuracy: u32,
+    nanosecond: i32,
+
+    /// GNSS fix Type
+    #[ubx(map_type = GpsFix)]
+    fix_type: u8,
+    #[ubx(map_type = NavPvtFlags)]
+    flags: u8, // Need to add additional flags to this
+    #[ubx(map_type = NavPvtFlags2)]
+    flags2: u8,
+    num_satellites: u8,
+    #[ubx(map_type = f64, scale = 1e-7, alias = lon_degrees)]
+    lon: i32,
+    #[ubx(map_type = f64, scale = 1e-7, alias = lat_degrees)]
+    lat: i32,
+
+    /// Height above Ellipsoid
+    #[ubx(map_type = f64, scale = 1e-3)]
+    height_meters: i32,
+
+    /// Height above mean sea level
+    #[ubx(map_type = f64, scale = 1e-3)]
+    height_msl: i32,
+    horiz_accuracy: u32,
+    vert_accuracy: u32,
+
+    /// north velocity (m/s)
+    #[ubx(map_type = f64, scale = 1e-3)]
+    vel_north: i32,
+
+    /// east velocity (m/s)
+    #[ubx(map_type = f64, scale = 1e-3)]
+    vel_east: i32,
+
+    /// down velocity (m/s)
+    #[ubx(map_type = f64, scale = 1e-3)]
+    vel_down: i32,
+
+    /// Ground speed (m/s)
+    #[ubx(map_type = f64, scale = 1e-3)]
+    ground_speed: i32,
+
+    /// Heading of motion 2-D (degrees)
+    #[ubx(map_type = f64, scale = 1e-5, alias = heading_degrees)]
+    heading: i32,
+
+    /// Speed Accuracy Estimate (m/s)
+    #[ubx(map_type = f64, scale = 1e-3)]
+    speed_accuracy_estimate: u32,
+
+    /// Heading accuracy estimate (both motionand vehicle) (degrees)
+    #[ubx(map_type = f64, scale = 1e-5)]
+    heading_accuracy_estimate: u32,
+
+    /// Position DOP
+    #[ubx(map_type = f32, scale = 1e-2)]
+    pdop: u16,
+
+    #[ubx(map_type = NavPvtFlags3)]
+    flags3: u16,
+
+    reserved0: [u8; 4],
+    #[ubx(map_type = f64, scale = 1e-5, alias = heading_of_vehicle_degrees)]
+    heading_of_vehicle: i32,
+    #[ubx(map_type = f64, scale = 1e-2, alias = magnetic_declination_degrees)]
+    magnetic_declination: i16,
+    #[ubx(map_type = f64, scale = 1e-2, alias = magnetic_declination_accuracy_degrees)]
+    magnetic_declination_accuracy: u16,
+}
+
+#[ubx_extend_bitflags]
+#[ubx(from, rest_reserved)]
+bitflags! {
+    #[derive(Debug)]
+    pub struct PvtValidFlags: u8 {
+        const VALID_DATE = 0x01;
+        const VALID_TIME = 0x02;
+        const FULLY_RESOLVED = 0x04;
+        const VALID_MAG = 0x08;
+    }
+}
+
+#[repr(transparent)]
+#[derive(Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+pub struct NavPvtFlags(u8);
+
+impl NavPvtFlags {
+    pub fn gnss_fix(self) -> bool {
+        (self.0 >> 0) & 0x01 != 0
+    }
+
+    pub fn differential_soluiton(self) -> bool {
+        (self.0 >> 1) & 0x01 != 0
+    }
+
+    pub fn power_save_mode(self) -> PowerSaveMode {
+        let bits: u8 = (self.0 >> 2) & 0x07;
+        match bits {
+            0 => PowerSaveMode::NotActive,
+            1 => PowerSaveMode::Enabled,
+            2 => PowerSaveMode::Acquisition,
+            3 => PowerSaveMode::Tracking,
+            4 => PowerSaveMode::PowerOptimizedTracking,
+            5 => PowerSaveMode::Inactive,
+            _ => {
+                panic!("Unexpected 3-bit bitfield value {}!", bits);
+            },
+        }
+    }
+
+    pub fn vehicle_heading_valid(self) -> bool {
+        (self.0 >> 5) & 0x01 != 0
+    }
+
+    pub fn carrier_solution(self) -> CarrierSolution {
+        let bits: u8 = (self.0 >> 6) & 0x03;
+        match bits {
+            0 => CarrierSolution::None,
+            1 => CarrierSolution::FloatingAmbiguities,
+            2 => CarrierSolution::FixedAmbiguities,
+            _ => {
+                panic!("Unexpected 3-bit bitfield value {}!", bits);
+            },
+        }
+    }
+
+    pub const fn from(x: u8) -> Self {
+        Self(x)
+    }
+}
+
+impl fmt::Debug for NavPvtFlags {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("NavPvtFlags")
+            .field("GnssFix", &self.gnss_fix())
+            .field("DifferentialSolution", &self.differential_soluiton())
+            .field("PowerSaveMode", &self.power_save_mode())
+            .field("VehicleHeading", &self.vehicle_heading_valid())
+            .field("CarrierSolution", &self.carrier_solution())
+            .finish()
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum PowerSaveMode {
+    NotActive,
+    Enabled,
+    Acquisition,
+    Tracking,
+    PowerOptimizedTracking,
+    Inactive,
+}
+
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum CarrierSolution {
+    None,
+    FloatingAmbiguities,
+    FixedAmbiguities,
+}
+
+#[ubx_extend_bitflags]
+#[ubx(from, rest_reserved)]
+bitflags! {
+    /// Additional flags for `NavPvt`
+    #[derive(Debug)]
+    pub struct NavPvtFlags2: u8 {
+        /// 1 = information about UTC Date and Time of Day validity confirmation
+        /// is available. This flag is only supported in Protocol Versions
+        /// 19.00, 19.10, 20.10, 20.20, 20.30, 22.00, 23.00, 23.01,27 and 28.
+        const CONFIRMED_AVAI = 0x20;
+        /// 1 = UTC Date validity could be confirmed
+        /// (confirmed by using an additional independent source)
+        const CONFIRMED_DATE = 0x40;
+        /// 1 = UTC Time of Day could be confirmed
+        /// (confirmed by using an additional independent source)
+        const CONFIRMED_TIME = 0x80;
+    }
+}
+
+#[repr(transparent)]
+#[derive(Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+pub struct NavPvtFlags3(u16);
+
+impl NavPvtFlags3 {
+    pub fn invalid_llh(self) -> bool {
+        (self.0 >> 0) & 0x01 != 0
+    }
+
+    pub fn last_correction_age(self) -> CorrectionAge {
+        let bits = (self.0 >> 1) & 0x000F;
+        match bits {
+            0 => CorrectionAge::NotAvailable,
+            1 => CorrectionAge::One,
+            2 => CorrectionAge::Two,
+            3 => CorrectionAge::Five,
+            4 => CorrectionAge::Ten,
+            5 => CorrectionAge::Fifteen,
+            6 => CorrectionAge::Twenty,
+            7 => CorrectionAge::Thirty,
+            8 => CorrectionAge::FortyFive,
+            9 => CorrectionAge::Sixty,
+            10 => CorrectionAge::Ninety,
+            11 => CorrectionAge::OneHundredTwenty,
+            12 => CorrectionAge::Max,
+            _ => {
+                panic!("Unexpected 4-bit bitfield value {}!", bits);
+            },
+        }
+    }
+
+    pub fn time_authenticated(self) -> bool {
+        (self.0 >> 13) & 0x01 != 0
+    }
+
+    pub const fn from(x: u16) -> Self {
+        Self(x)
+    }
+}
+
+impl fmt::Debug for NavPvtFlags3 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("NavPvt3Flags")
+            .field("InvalidLLH", &self.invalid_llh())
+            .field("CorrectionAge", &self.last_correction_age())
+            .field("TimeAuthenticated", &self.time_authenticated())
+            .finish()
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum CorrectionAge {
+    NotAvailable,
+    One,
+    Two,
+    Five,
+    Ten,
+    Fifteen,
+    Twenty,
+    Thirty,
+    FortyFive,
+    Sixty,
+    Ninety,
+    OneHundredTwenty,
+    Max,
+}
+
+/// Reset odometer
+#[ubx_packet_send]
+#[ubx(class = 0x01, id = 0x10, fixed_payload_len = 0)]
+struct NavResetOdo {}
+
+#[repr(transparent)]
+#[derive(Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+pub struct NavSatSvFlags(u32);
+
+impl NavSatSvFlags {
+    pub fn quality_ind(self) -> NavSatQualityIndicator {
+        let bits = self.0 & 0x7;
+        match bits {
+            0 => NavSatQualityIndicator::NoSignal,
+            1 => NavSatQualityIndicator::Searching,
+            2 => NavSatQualityIndicator::SignalAcquired,
+            3 => NavSatQualityIndicator::SignalDetected,
+            4 => NavSatQualityIndicator::CodeLock,
+            5..=7 => NavSatQualityIndicator::CarrierLock,
+            _ => {
+                panic!("Unexpected 3-bit bitfield value {}!", bits);
+            },
+        }
+    }
+
+    pub fn sv_used(self) -> bool {
+        (self.0 >> 3) & 0x1 != 0
+    }
+
+    pub fn health(self) -> NavSatSvHealth {
+        let bits = (self.0 >> 4) & 0x3;
+        match bits {
+            1 => NavSatSvHealth::Healthy,
+            2 => NavSatSvHealth::Unhealthy,
+            x => NavSatSvHealth::Unknown(x as u8),
+        }
+    }
+
+    pub fn differential_correction_available(self) -> bool {
+        (self.0 >> 6) & 0x1 != 0
+    }
+
+    pub fn smoothed(self) -> bool {
+        (self.0 >> 7) & 0x1 != 0
+    }
+
+    pub fn orbit_source(self) -> NavSatOrbitSource {
+        let bits = (self.0 >> 8) & 0x7;
+        match bits {
+            0 => NavSatOrbitSource::NoInfoAvailable,
+            1 => NavSatOrbitSource::Ephemeris,
+            2 => NavSatOrbitSource::Almanac,
+            3 => NavSatOrbitSource::AssistNowOffline,
+            4 => NavSatOrbitSource::AssistNowAutonomous,
+            x => NavSatOrbitSource::Other(x as u8),
+        }
+    }
+
+    pub fn ephemeris_available(self) -> bool {
+        (self.0 >> 11) & 0x1 != 0
+    }
+
+    pub fn almanac_available(self) -> bool {
+        (self.0 >> 12) & 0x1 != 0
+    }
+
+    pub fn an_offline_available(self) -> bool {
+        (self.0 >> 13) & 0x1 != 0
+    }
+
+    pub fn an_auto_available(self) -> bool {
+        (self.0 >> 14) & 0x1 != 0
+    }
+
+    pub fn sbas_corr(self) -> bool {
+        (self.0 >> 16) & 0x1 != 0
+    }
+
+    pub fn rtcm_corr(self) -> bool {
+        (self.0 >> 17) & 0x1 != 0
+    }
+
+    pub fn slas_corr(self) -> bool {
+        (self.0 >> 18) & 0x1 != 0
+    }
+
+    pub fn spartn_corr(self) -> bool {
+        (self.0 >> 19) & 0x1 != 0
+    }
+
+    pub fn pr_corr(self) -> bool {
+        (self.0 >> 20) & 0x1 != 0
+    }
+
+    pub fn cr_corr(self) -> bool {
+        (self.0 >> 21) & 0x1 != 0
+    }
+
+    pub fn do_corr(self) -> bool {
+        (self.0 >> 22) & 0x1 != 0
+    }
+
+    pub const fn from(x: u32) -> Self {
+        Self(x)
+    }
+}
+
+impl fmt::Debug for NavSatSvFlags {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("NavSatSvFlags")
+            .field("quality_ind", &self.quality_ind())
+            .field("sv_used", &self.sv_used())
+            .field("health", &self.health())
+            .field(
+                "differential_correction_available",
+                &self.differential_correction_available(),
+            )
+            .field("smoothed", &self.smoothed())
+            .field("orbit_source", &self.orbit_source())
+            .field("ephemeris_available", &self.ephemeris_available())
+            .field("almanac_available", &self.almanac_available())
+            .field("an_offline_available", &self.an_offline_available())
+            .field("an_auto_available", &self.an_auto_available())
+            .field("sbas_corr", &self.sbas_corr())
+            .field("rtcm_corr", &self.rtcm_corr())
+            .field("slas_corr", &self.slas_corr())
+            .field("spartn_corr", &self.spartn_corr())
+            .field("pr_corr", &self.pr_corr())
+            .field("cr_corr", &self.cr_corr())
+            .field("do_corr", &self.do_corr())
+            .finish()
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum NavSatQualityIndicator {
+    NoSignal,
+    Searching,
+    SignalAcquired,
+    SignalDetected,
+    CodeLock,
+    CarrierLock,
+}
+
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum NavSatSvHealth {
+    Healthy,
+    Unhealthy,
+    Unknown(u8),
+}
+
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum NavSatOrbitSource {
+    NoInfoAvailable,
+    Ephemeris,
+    Almanac,
+    AssistNowOffline,
+    AssistNowAutonomous,
+    Other(u8),
+}
+
+#[ubx_packet_recv]
+#[ubx(class = 0x01, id = 0x35, fixed_payload_len = 12)]
+struct NavSatSvInfo {
+    gnss_id: u8,
+    sv_id: u8,
+    cno: u8,
+    elev: i8,
+    azim: i16,
+    pr_res: i16,
+
+    #[ubx(map_type = NavSatSvFlags)]
+    flags: u32,
+}
+
+#[derive(Debug, Clone)]
+pub struct NavSatIter<'a> {
+    data: &'a [u8],
+    offset: usize,
+}
+
+impl<'a> NavSatIter<'a> {
+    fn new(data: &'a [u8]) -> Self {
+        Self { data, offset: 0 }
+    }
+
+    fn is_valid(bytes: &[u8]) -> bool {
+        bytes.len() % 12 == 0
+    }
+}
+
+impl<'a> core::iter::Iterator for NavSatIter<'a> {
+    type Item = NavSatSvInfoRef<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.offset < self.data.len() {
+            let data = &self.data[self.offset..self.offset + 12];
+            self.offset += 12;
+            Some(NavSatSvInfoRef(data))
+        } else {
+            None
+        }
+    }
+}
+
+#[ubx_packet_recv]
+#[ubx(class = 0x01, id = 0x35, max_payload_len = 1240)]
+struct NavSat {
+    /// GPS time of week in ms
+    itow: u32,
+
+    /// Message version, should be 1
+    version: u8,
+
+    num_svs: u8,
+
+    reserved0: [u8; 2],
+
+    #[ubx(
+        map_type = NavSatIter,
+        from = NavSatIter::new,
+        is_valid = NavSatIter::is_valid,
+        may_fail,
+        get_as_ref,
+    )]
+    svs: [u8; 0],
+}
+
+///  Receiver Navigation Status
+#[ubx_packet_recv]
+#[ubx(class = 0x01, id = 0x03, fixed_payload_len = 16)]
+struct NavStatus {
+    /// GPS Millisecond Time of Week
+    itow: u32,
+
+    /// GPS fix Type, this value does not qualify a fix as
+
+    /// valid and within the limits
+    #[ubx(map_type = GpsFix)]
+    fix_type: u8,
+
+    /// Navigation Status Flags
+    #[ubx(map_type = NavStatusFlags)]
+    flags: u8,
+
+    /// Fix Status Information
+    #[ubx(map_type = FixStatusInfo)]
+    fix_stat: u8,
+
+    /// further information about navigation output
+    #[ubx(map_type = NavStatusFlags2)]
+    flags2: u8,
+
+    /// Time to first fix (millisecond time tag)
+    time_to_first_fix: u32,
+
+    /// Milliseconds since Startup / Reset
+    uptime_ms: u32,
+}
+
+/// Navigation Solution Information
+#[ubx_packet_recv]
+#[ubx(class = 1, id = 6, fixed_payload_len = 52)]
+struct NavSolution {
+    /// GPS Millisecond Time of Week
+    itow: u32,
+
+    /// Fractional part of iTOW (range: +/-500000).
+    ftow_ns: i32,
+
+    /// GPS week number of the navigation epoch
+    week: i16,
+
+    /// GPS fix Type
+    #[ubx(map_type = GpsFix)]
+    fix_type: u8,
+
+    /// Navigation Status Flags
+    #[ubx(map_type = NavStatusFlags)]
+    flags: u8,
+
+    /// ECEF X coordinate (meters)
+    #[ubx(map_type = f64, scale = 1e-2)]
+    ecef_x: i32,
+
+    /// ECEF Y coordinate (meters)
+    #[ubx(map_type = f64, scale = 1e-2)]
+    ecef_y: i32,
+
+    /// ECEF Z coordinate (meters)
+    #[ubx(map_type = f64, scale = 1e-2)]
+    ecef_z: i32,
+
+    /// 3D Position Accuracy Estimate
+    #[ubx(map_type = f64, scale = 1e-2)]
+    position_accuracy_estimate: u32,
+
+    /// ECEF X velocity (m/s)
+    #[ubx(map_type = f64, scale = 1e-2)]
+    ecef_vx: i32,
+
+    /// ECEF Y velocity (m/s)
+    #[ubx(map_type = f64, scale = 1e-2)]
+    ecef_vy: i32,
+
+    /// ECEF Z velocity (m/s)
+    #[ubx(map_type = f64, scale = 1e-2)]
+    ecef_vz: i32,
+
+    /// Speed Accuracy Estimate
+    #[ubx(map_type = f64, scale = 1e-2)]
+    speed_accuracy_estimate: u32,
+
+    /// Position DOP
+    #[ubx(map_type = f32, scale = 1e-2)]
+    pdop: u16,
+    reserved1: u8,
+
+    /// Number of SVs used in Nav Solution
+    num_sv: u8,
+    reserved2: [u8; 4],
+}
+
+/// GPS fix Type
+#[ubx_extend]
+#[ubx(from, rest_reserved)]
+#[repr(u8)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum GpsFix {
+    NoFix = 0,
+    DeadReckoningOnly = 1,
+    Fix2D = 2,
+    Fix3D = 3,
+    GPSPlusDeadReckoning = 4,
+    TimeOnlyFix = 5,
+}
+
+#[ubx_extend_bitflags]
+#[ubx(from, rest_reserved)]
+bitflags! {
+    /// Navigation Status Flags
+    #[derive(Debug)]
+    pub struct NavStatusFlags: u8 {
+        /// position and velocity valid and within DOP and ACC Masks
+        const GPS_FIX_OK = 1;
+        /// DGPS used
+        const DIFF_SOLN = 2;
+        /// Week Number valid
+        const WKN_SET = 4;
+        /// Time of Week valid
+        const TOW_SET = 8;
+    }
+}
+
+/// Fix Status Information
+#[repr(transparent)]
+#[derive(Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+pub struct FixStatusInfo(u8);
+
+impl FixStatusInfo {
+    pub const fn has_pr_prr_correction(self) -> bool {
+        (self.0 & 1) == 1
+    }
+    pub fn map_matching(self) -> MapMatchingStatus {
+        let bits = (self.0 >> 6) & 3;
+        match bits {
+            0 => MapMatchingStatus::None,
+            1 => MapMatchingStatus::Valid,
+            2 => MapMatchingStatus::Used,
+            3 => MapMatchingStatus::Dr,
+            _ => unreachable!(),
+        }
+    }
+    pub const fn from(x: u8) -> Self {
+        Self(x)
+    }
+}
+
+impl fmt::Debug for FixStatusInfo {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("FixStatusInfo")
+            .field("has_pr_prr_correction", &self.has_pr_prr_correction())
+            .field("map_matching", &self.map_matching())
+            .finish()
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+pub enum MapMatchingStatus {
+    None = 0,
+    /// valid, i.e. map matching data was received, but was too old
+    Valid = 1,
+    /// used, map matching data was applied
+    Used = 2,
+    /// map matching was the reason to enable the dead reckoning
+    /// gpsFix type instead of publishing no fix
+    Dr = 3,
+}
+
+/// Further information about navigation output
+/// Only for FW version >= 7.01; undefined otherwise
+#[ubx_extend]
+#[ubx(from, rest_reserved)]
+#[repr(u8)]
+#[derive(Debug, Copy, Clone)]
+enum NavStatusFlags2 {
+    Acquisition = 0,
+    Tracking = 1,
+    PowerOptimizedTracking = 2,
+    Inactive = 3,
 }
 
 /// Leap second event information
@@ -1573,543 +2864,12 @@ bitflags! {
     }
 }
 
-/// Time MODE3 Config Frame (32.10.37.1)
-/// only available on `timing` receivers
-#[ubx_packet_recv_send]
-#[ubx(
-    class = 0x06,
-    id = 0x71,
-    fixed_payload_len = 40,
-    flags = "default_for_builder"
-)]
-struct CfgTmode3 {
-    version: u8,
-    reserved1: u8,
-    /// Receiver mode, see [CfgTmode3RcvrMode] enum
-    #[ubx(map_type = CfgTmode3RcvrMode)]
-    rcvr_mode: u8,
-    #[ubx(map_type = CfgTmode3Flags)]
-    flags: u8,
-    /// WGS84 ECEF.x coordinate in [m] or latitude in [deg° *1E-5],
-    /// depending on `flags` field
-    #[ubx(map_type = f64, scale = 1e-2)]
-    ecef_x_or_lat: i32,
-    /// WGS84 ECEF.y coordinate in [m] or longitude in [deg° *1E-5],
-    /// depending on `flags` field
-    #[ubx(map_type = f64, scale = 1e-2)]
-    ecef_y_or_lon: i32,
-    /// WGS84 ECEF.z coordinate or altitude, both in [m],
-    /// depending on `flags` field
-    #[ubx(map_type = f64, scale = 1e-2)]
-    ecef_z_or_alt: i32,
-    /// High precision WGS84 ECEF.x coordinate in [tenths of mm],
-    /// or high precision latitude, in nano degrees,
-    /// depending on `flags` field.
-    #[ubx(map_type = f32, scale = 1.0)]
-    ecef_x_or_lat_hp: i8,
-    /// High precision WGS84 ECEF.y coordinate in [tenths of mm]
-    /// or high precision longitude, in nano degrees,
-    /// depending on `flags` field.
-    #[ubx(map_type = f32, scale = 1.0)]
-    ecef_y_or_lon_hp: i8,
-    /// High precision WGS84 ECEF.z coordinate or altitude,
-    /// both if tenths of [mm],
-    /// depending on `flags` field.
-    #[ubx(map_type = f32, scale = 1.0)]
-    ecef_z_or_alt_hp: i8,
-    reserved2: u8,
-    /// Fixed position 3D accuracy [0.1 mm]
-    #[ubx(map_type = f64, scale = 1e-4)]
-    fixed_pos_acc: u32,
-    /// Survey in minimum duration [s]
-    sv_in_min_duration: u32,
-    /// Survey in position accuracy limit [0.1 mm]
-    #[ubx(map_type = f64, scale = 1e-4)]
-    sv_in_accur_limit: u32,
-    reserved3: [u8; 8],
-}
-
-#[ubx_extend_bitflags]
-#[ubx(from, into_raw, rest_reserved)]
-bitflags! {
-    #[derive(Default, Debug)]
-    pub struct CfgTmode3RcvrMode: u8 {
-        const DISABLED = 0x01;
-        const SURVEY_IN = 0x02;
-        /// True ARP position is required in `FixedMode`
-        const FIXED_MODE = 0x04;
-    }
-}
-
-#[ubx_extend_bitflags]
-#[ubx(from, into_raw, rest_reserved)]
-bitflags! {
-    #[derive(Default, Debug)]
-    pub struct CfgTp5Flags: u32 {
-        // Enables time pulse
-        const ACTIVE = 0x01;
-        /// Synchronize time pulse to GNSS as
-        /// soon as GNSS time is valid.
-        /// Uses local lock otherwise.
-        const LOCK_GNSS_FREQ = 0x02;
-        /// use `freq_period_lock` and `pulse_len_ratio_lock`
-        /// fields as soon as GPS time is valid. Uses
-        /// `freq_period` and `pulse_len_ratio` when GPS time is invalid.
-        const LOCKED_OTHER_SET = 0x04;
-        /// `freq_period` and `pulse_len_ratio` fields
-        /// are interprated as frequency when this bit is set
-        const IS_FREQ = 0x08;
-        /// Interprate pulse lengths instead of duty cycle
-        const IS_LENGTH = 0x10;
-        /// Align pulse to top of second
-        /// Period time must be integer fraction of `1sec`
-        /// `LOCK_GNSS_FREQ` is expected, to unlock this feature
-        const ALIGN_TO_TOW = 0x20;
-        /// Pulse polarity,
-        /// 0: falling edge @ top of second,
-        /// 1: rising edge @ top of second,
-        const POLARITY = 0x40;
-        /// UTC time grid
-        const UTC_TIME_GRID = 0x80;
-        /// GPS time grid
-        const GPS_TIME_GRID = 0x100;
-        /// GLO time grid
-        const GLO_TIME_GRID = 0x200;
-        /// BDS time grid
-        const BDS_TIME_GRID = 0x400;
-        /// GAL time grid
-        /// not supported in protocol < 18
-        const GAL_TIME_GRID = 0x800;
-        /// Switches to FreqPeriodLock and PulseLenRatio
-        /// as soon as Sync Manager has an accurate time,
-        /// never switches back
-        const SYNC_MODE_0 = 0x1000;
-        /// Switches to FreqPeriodLock and PulseLenRatioLock
-        /// as soon as Sync Manager has an accurante time,
-        /// and switch back to FreqPeriodLock and PulseLenRatio
-        /// when time gets inaccurate
-        const SYNC_MODE_1 = 0x2000;
-    }
-}
-
-#[ubx_extend_bitflags]
-#[ubx(from, into_raw, rest_reserved)]
-bitflags! {
-    #[derive(Default, Debug)]
-    pub struct CfgTmode3Flags: u8 {
-        /// Set if position is given in Lat/Lon/Alt,
-        /// ECEF coordinates being used otherwise
-        const LLA = 0x01;
-    }
-}
-
-#[ubx_extend_bitflags]
-#[ubx(into_raw, rest_reserved)]
-bitflags! {
-    /// Battery backed RAM sections to clear
-    pub struct NavBbrMask: u16 {
-        const EPHEMERIS = 1;
-        const ALMANACH = 2;
-        const HEALTH = 4;
-        const KLOBUCHARD = 8;
-        const POSITION = 16;
-        const CLOCK_DRIFT = 32;
-        const OSCILATOR_PARAMETER = 64;
-        const UTC_CORRECTION_PARAMETERS = 0x80;
-        const RTC = 0x100;
-        const SFDR_PARAMETERS = 0x800;
-        const SFDR_VEHICLE_MONITORING_PARAMETERS = 0x1000;
-        const TCT_PARAMETERS = 0x2000;
-        const AUTONOMOUS_ORBIT_PARAMETERS = 0x8000;
-    }
-}
-
-/// Predefined values for `NavBbrMask`
-#[derive(Clone, Copy)]
-#[repr(transparent)]
-pub struct NavBbrPredefinedMask(u16);
-
-impl From<NavBbrPredefinedMask> for NavBbrMask {
-    fn from(x: NavBbrPredefinedMask) -> Self {
-        Self::from_bits_truncate(x.0)
-    }
-}
-
-impl NavBbrPredefinedMask {
-    pub const HOT_START: NavBbrPredefinedMask = NavBbrPredefinedMask(0);
-    pub const WARM_START: NavBbrPredefinedMask = NavBbrPredefinedMask(1);
-    pub const COLD_START: NavBbrPredefinedMask = NavBbrPredefinedMask(0xFFFF);
-}
-
-/// Reset Type
-#[repr(u8)]
-#[derive(Clone, Copy, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum ResetMode {
-    /// Hardware reset (Watchdog) immediately
-    HardwareResetImmediately = 0,
-    ControlledSoftwareReset = 0x1,
-    ControlledSoftwareResetGpsOnly = 0x02,
-    /// Hardware reset (Watchdog) after shutdown (>=FW6.0)
-    HardwareResetAfterShutdown = 0x04,
-    ControlledGpsStop = 0x08,
-    ControlledGpsStart = 0x09,
-}
-
-impl ResetMode {
-    const fn into_raw(self) -> u8 {
-        self as u8
-    }
-}
-
-#[ubx_packet_send]
-#[ubx(
-  class = 0x06,
-  id = 0x8a,
-  max_payload_len = 772, // 4 + (4 + 8) * 64
-)]
-struct CfgValSet<'a> {
-    /// Message version
-    version: u8,
-    /// The layers from which the configuration items should be retrieved
-    #[ubx(map_type = CfgLayer)]
-    layers: u8,
-    reserved1: u16,
-    cfg_data: &'a [CfgVal],
-}
-
-#[derive(Debug, Clone)]
-pub struct CfgValIter<'a> {
-    pub(crate) data: &'a [u8],
-    pub(crate) offset: usize,
-}
-
-impl<'a> CfgValIter<'a> {
-    pub fn new(data: &'a mut [u8], values: &[CfgVal]) -> Self {
-        let mut offset = 0;
-
-        for value in values {
-            offset += value.write_to(&mut data[offset..]);
-        }
-
-        Self {
-            data: &data[..offset],
-            offset: 0,
-        }
-    }
-}
-
-impl<'a> core::iter::Iterator for CfgValIter<'a> {
-    type Item = CfgVal;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.offset < self.data.len() {
-            let cfg_val = CfgVal::parse(&self.data[self.offset..]);
-
-            self.offset += cfg_val.len();
-
-            Some(cfg_val)
-        } else {
-            None
-        }
-    }
-}
-
-#[ubx_extend_bitflags]
-#[ubx(from, into_raw, rest_reserved)]
-bitflags! {
-    /// A mask describing where configuration is applied.
-    pub struct CfgLayer: u8 {
-        const RAM = 0b001;
-        const BBR = 0b010;
-        const FLASH = 0b100;
-    }
-}
-
-impl Default for CfgLayer {
-    fn default() -> Self {
-        Self::RAM | Self::BBR | Self::FLASH
-    }
-}
-
-/// Port Configuration for I2C
-#[ubx_packet_recv_send]
-#[ubx(
-    class = 0x06,
-    id = 0x00,
-    fixed_payload_len = 20,
-    flags = "default_for_builder"
-)]
-struct CfgPrtI2c {
-    #[ubx(map_type = I2cPortId, may_fail)]
-    portid: u8,
-    reserved1: u8,
-    /// TX ready PIN configuration
-    tx_ready: u16,
-    /// I2C Mode Flags
-    mode: u32,
-    reserved2: u32,
-    #[ubx(map_type = InProtoMask)]
-    in_proto_mask: u16,
-    #[ubx(map_type = OutProtoMask)]
-    out_proto_mask: u16,
-    flags: u16,
-    reserved3: u16,
-}
-
-/// Port Identifier Number (= 0 for I2C ports)
-#[derive(Default)]
-#[ubx_extend]
-#[ubx(from_unchecked, into_raw, rest_error)]
-#[repr(u8)]
-#[derive(Debug, Copy, Clone)]
-pub enum I2cPortId {
-    #[default]
-    I2c = 0,
-}
-
-/// Port Configuration for UART
-#[ubx_packet_recv_send]
-#[ubx(class = 0x06, id = 0x00, fixed_payload_len = 20)]
-struct CfgPrtUart {
-    #[ubx(map_type = UartPortId, may_fail)]
-    portid: u8,
-    reserved0: u8,
-    tx_ready: u16,
-    #[ubx(map_type = UartMode)]
-    mode: u32,
-    baud_rate: u32,
-    #[ubx(map_type = InProtoMask)]
-    in_proto_mask: u16,
-    #[ubx(map_type = OutProtoMask)]
-    out_proto_mask: u16,
-    flags: u16,
-    reserved5: u16,
-}
-
-/// Port Identifier Number (= 1 or 2 for UART ports)
-#[ubx_extend]
-#[ubx(from_unchecked, into_raw, rest_error)]
-#[repr(u8)]
-#[derive(Debug, Copy, Clone)]
-pub enum UartPortId {
-    Uart1 = 1,
-    Uart2 = 2,
-    Usb = 3,
-}
-
-#[derive(Debug, Copy, Clone)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct UartMode {
-    data_bits: DataBits,
-    parity: Parity,
-    stop_bits: StopBits,
-}
-
-impl UartMode {
-    pub const fn new(data_bits: DataBits, parity: Parity, stop_bits: StopBits) -> Self {
-        Self {
-            data_bits,
-            parity,
-            stop_bits,
-        }
-    }
-
-    const fn into_raw(self) -> u32 {
-        self.data_bits.into_raw() | self.parity.into_raw() | self.stop_bits.into_raw()
-    }
-}
-
-impl From<u32> for UartMode {
-    fn from(mode: u32) -> Self {
-        let data_bits = DataBits::from(mode);
-        let parity = Parity::from(mode);
-        let stop_bits = StopBits::from(mode);
-
-        Self {
-            data_bits,
-            parity,
-            stop_bits,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum DataBits {
-    Seven,
-    Eight,
-}
-
-impl DataBits {
-    const POSITION: u32 = 6;
-    const MASK: u32 = 0b11;
-
-    const fn into_raw(self) -> u32 {
-        (match self {
-            Self::Seven => 0b10,
-            Self::Eight => 0b11,
-        }) << Self::POSITION
-    }
-}
-
-impl From<u32> for DataBits {
-    fn from(mode: u32) -> Self {
-        match (mode >> Self::POSITION) & Self::MASK {
-            0b00 => unimplemented!("five data bits"),
-            0b01 => unimplemented!("six data bits"),
-            0b10 => Self::Seven,
-            0b11 => Self::Eight,
-            _ => unreachable!(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum Parity {
-    Even,
-    Odd,
-    None,
-}
-
-impl Parity {
-    const POSITION: u32 = 9;
-    const MASK: u32 = 0b111;
-
-    const fn into_raw(self) -> u32 {
-        (match self {
-            Self::Even => 0b000,
-            Self::Odd => 0b001,
-            Self::None => 0b100,
-        }) << Self::POSITION
-    }
-}
-
-impl From<u32> for Parity {
-    fn from(mode: u32) -> Self {
-        match (mode >> Self::POSITION) & Self::MASK {
-            0b000 => Self::Even,
-            0b001 => Self::Odd,
-            0b100 | 0b101 => Self::None,
-            0b010 | 0b011 | 0b110 | 0b111 => unimplemented!("reserved"),
-            _ => unreachable!(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum StopBits {
-    One,
-    OneHalf,
-    Two,
-    Half,
-}
-
-impl StopBits {
-    const POSITION: u32 = 12;
-    const MASK: u32 = 0b11;
-
-    const fn into_raw(self) -> u32 {
-        (match self {
-            Self::One => 0b00,
-            Self::OneHalf => 0b01,
-            Self::Two => 0b10,
-            Self::Half => 0b11,
-        }) << Self::POSITION
-    }
-}
-
-impl From<u32> for StopBits {
-    fn from(mode: u32) -> Self {
-        match (mode >> Self::POSITION) & Self::MASK {
-            0b00 => Self::One,
-            0b01 => Self::OneHalf,
-            0b10 => Self::Two,
-            0b11 => Self::Half,
-            _ => unreachable!(),
-        }
-    }
-}
-
-/// Port Configuration for SPI Port
-#[ubx_packet_recv_send]
-#[ubx(
-    class = 0x06,
-    id = 0x00,
-    fixed_payload_len = 20,
-    flags = "default_for_builder"
-)]
-struct CfgPrtSpi {
-    #[ubx(map_type = SpiPortId, may_fail)]
-    portid: u8,
-    reserved0: u8,
-    /// TX ready PIN configuration
-    tx_ready: u16,
-    /// SPI Mode Flags
-    mode: u32,
-    reserved3: u32,
-    #[ubx(map_type = InProtoMask)]
-    in_proto_mask: u16,
-    #[ubx(map_type = OutProtoMask)]
-    out_proto_mask: u16,
-    flags: u16,
-    reserved5: u16,
-}
-
-#[ubx_extend_bitflags]
-#[ubx(from, into_raw, rest_reserved)]
-bitflags! {
-    /// A mask describing which input protocols are active
-    /// Each bit of this mask is used for a protocol.
-    /// Through that, multiple protocols can be defined on a single port
-    /// Used in `CfgPrtSpi` and `CfgPrtI2c`
-    #[derive(Default, Debug)]
-    pub struct InProtoMask: u16 {
-        const UBLOX = 1;
-        const NMEA = 2;
-        const RTCM = 4;
-        /// The bitfield inRtcm3 is not supported in protocol
-        /// versions less than 20
-        const RTCM3 = 0x20;
-    }
-}
-
-#[ubx_extend_bitflags]
-#[ubx(from, into_raw, rest_reserved)]
-bitflags! {
-    /// A mask describing which output protocols are active.
-    /// Each bit of this mask is used for a protocol.
-    /// Through that, multiple protocols can be defined on a single port
-    /// Used in `CfgPrtSpi` and `CfgPrtI2c`
-    #[derive(Default, Debug)]
-    pub struct OutProtoMask: u16 {
-        const UBLOX = 1;
-        const NMEA = 2;
-        /// The bitfield outRtcm3 is not supported in protocol
-        /// versions less than 20
-        const RTCM3 = 0x20;
-    }
-}
-
-/// Port Identifier Number (= 4 for SPI port)
-#[derive(Default)]
-#[ubx_extend]
-#[ubx(from_unchecked, into_raw, rest_error)]
-#[repr(u8)]
-#[derive(Debug, Copy, Clone)]
-pub enum SpiPortId {
-    #[default]
-    Spi = 4,
-}
-
 /// UTC Time Solution
 #[ubx_packet_recv]
-#[ubx(class = 1, id = 0x21, fixed_payload_len = 20)]
+#[ubx(class = 0x01, id = 0x21, fixed_payload_len = 20)]
 struct NavTimeUTC {
     /// GPS Millisecond Time of Week
-    itow: u32,
+    i_tow: u32,
     time_accuracy_estimate_ns: u32,
 
     /// Nanoseconds of second, range -1e9 .. 1e9
@@ -2138,100 +2898,126 @@ struct NavTimeUTC {
     valid: u8,
 }
 
-#[ubx_extend_bitflags]
-#[ubx(from, rest_reserved)]
-bitflags! {
-    /// Validity Flags of `NavTimeUTC`
-    #[derive(Default, Debug)]
-    pub struct NavTimeUtcFlags: u8 {
-        /// Valid Time of Week
-        const VALID_TOW = 1;
-        /// Valid Week Number
-        const VALID_WKN = 2;
-        /// Valid UTC (Leap Seconds already known)
-        const VALID_UTC = 4;
+#[repr(transparent)]
+#[derive(Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+pub struct NavTimeUtcFlags(u8);
+
+impl NavTimeUtcFlags {
+    pub fn valid_tow(self) -> bool {
+        (self.0 >> 0) & 0x01 != 0
     }
-}
 
-/// Navigation/Measurement Rate Settings
-#[ubx_packet_send]
-#[ubx(class = 6, id = 8, fixed_payload_len = 6)]
-struct CfgRate {
-    /// Measurement Rate, GPS measurements are taken every `measure_rate_ms` milliseconds
-    measure_rate_ms: u16,
-
-    /// Navigation Rate, in number of measurement cycles.
-
-    /// On u-blox 5 and u-blox 6, this parametercannot be changed, and is always equals 1.
-    nav_rate: u16,
-
-    /// Alignment to reference time
-    #[ubx(map_type = AlignmentToReferenceTime)]
-    time_ref: u16,
-}
-
-/// Alignment to reference time
-#[repr(u16)]
-#[derive(Clone, Copy, Debug)]
-pub enum AlignmentToReferenceTime {
-    Utc = 0,
-    Gps = 1,
-    Glo = 2,
-    Bds = 3,
-    Gal = 4,
-}
-
-impl AlignmentToReferenceTime {
-    const fn into_raw(self) -> u16 {
-        self as u16
+    pub fn valid_wkn(self) -> bool {
+        (self.0 >> 1) & 0x01 != 0
     }
-}
 
-/// Set Message Rate the current port
-#[ubx_packet_send]
-#[ubx(class = 6, id = 1, fixed_payload_len = 3)]
-struct CfgMsgSinglePort {
-    msg_class: u8,
-    msg_id: u8,
+    pub fn valid_utc(self) -> bool {
+        (self.0 >> 2) & 0x01 != 0
+    }
 
-    /// Send rate on current Target
-    rate: u8,
-}
+    pub fn auth_status(self) -> bool {
+        (self.0 >> 3) & 0x01 != 0
+    }
 
-impl CfgMsgSinglePortBuilder {
-    #[inline]
-    pub fn set_rate_for<T: UbxPacketMeta>(rate: u8) -> Self {
-        Self {
-            msg_class: T::CLASS,
-            msg_id: T::ID,
-            rate,
+    pub fn utc_standard(self) -> UTCStandard {
+        let bits = (self.0 >> 4) & 0x0F;
+        match bits {
+            0 => UTCStandard::NotAvailable,
+            1 => UTCStandard::CRL,
+            2 => UTCStandard::NIST,
+            3 => UTCStandard::USNO,
+            4 => UTCStandard::CIPM,
+            5 => UTCStandard::EU,
+            6 => UTCStandard::SU,
+            7 => UTCStandard::NTSC,
+            8 => UTCStandard::NPLI,
+            15 => UTCStandard::Unknown,
+            _ => {
+                panic!("Unexpected 4-bit bitfield value {}!", bits);
+            },
         }
     }
-}
 
-/// Set Message rate configuration
-/// Send rate is relative to the event a message is registered on.
-/// For example, if the rate of a navigation message is set to 2,
-/// the message is sent every second navigation solution
-#[ubx_packet_send]
-#[ubx(class = 6, id = 1, fixed_payload_len = 8)]
-struct CfgMsgAllPorts {
-    msg_class: u8,
-    msg_id: u8,
-
-    /// Send rate on I/O Port (6 Ports)
-    rates: [u8; 6],
-}
-
-impl CfgMsgAllPortsBuilder {
-    #[inline]
-    pub fn set_rate_for<T: UbxPacketMeta>(rates: [u8; 6]) -> Self {
-        Self {
-            msg_class: T::CLASS,
-            msg_id: T::ID,
-            rates,
-        }
+    pub const fn from(x: u8) -> Self {
+        Self(x)
     }
+}
+
+impl fmt::Debug for NavTimeUtcFlags {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("MonPatchFlags")
+            .field("ValidTOW", &self.valid_tow())
+            .field("ValidWKN", &self.valid_wkn())
+            .field("ValidUTC", &self.valid_utc())
+            .field("UTCStandard", &self.utc_standard())
+            .finish()
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum UTCStandard {
+    NotAvailable,
+    CRL,
+    NIST,
+    USNO,
+    CIPM,
+    EU,
+    SU,
+    NTSC,
+    NPLI,
+    Unknown,
+}
+
+#[ubx_packet_recv]
+#[ubx(class = 0x01, id = 0x11, fixed_payload_len = 20)]
+struct NavVelECEF {
+    i_tow: u32,
+    ecef_vx: i32,
+    ecef_vy: i32,
+    ecef_vz: u32,
+    s_acc: u32,
+}
+
+/// Velocity Solution in NED
+#[ubx_packet_recv]
+#[ubx(class = 0x01, id = 0x12, fixed_payload_len = 36)]
+struct NavVelNed {
+    /// GPS Millisecond Time of Week
+    itow: u32,
+
+    /// north velocity (m/s)
+    #[ubx(map_type = f64, scale = 1e-2)]
+    vel_north: i32,
+
+    /// east velocity (m/s)
+    #[ubx(map_type = f64, scale = 1e-2)]
+    vel_east: i32,
+
+    /// down velocity (m/s)
+    #[ubx(map_type = f64, scale = 1e-2)]
+    vel_down: i32,
+
+    /// Speed 3-D (m/s)
+    #[ubx(map_type = f64, scale = 1e-2)]
+    speed_3d: u32,
+
+    /// Ground speed (m/s)
+    #[ubx(map_type = f64, scale = 1e-2)]
+    ground_speed: u32,
+
+    /// Heading of motion 2-D (degrees)
+    #[ubx(map_type = f64, scale = 1e-5, alias = heading_degrees)]
+    heading: i32,
+
+    /// Speed Accuracy Estimate (m/s)
+    #[ubx(map_type = f64, scale = 1e-2)]
+    speed_accuracy_estimate: u32,
+
+    /// Course / Heading Accuracy Estimate (degrees)
+    #[ubx(map_type = f64, scale = 1e-5)]
+    course_heading_accuracy_estimate: u32,
 }
 
 /// Navigation Engine Settings
@@ -2830,6 +3616,30 @@ pub enum TimTpRefInfoUtcStandard {
     Npli,
 }
 
+/// Time mode survey-in status
+#[ubx_packet_recv]
+#[ubx(class = 0x0d, id = 0x04, fixed_payload_len = 28)]
+struct TimSvin {
+    /// Passed survey-in minimum duration
+    /// Units: s
+    dur: u32,
+    /// Current survey-in mean position ECEF X coordinate
+    mean_x: i32,
+    /// Current survey-in mean position ECEF Y coordinate
+    mean_y: i32,
+    /// Current survey-in mean position ECEF Z coordinate
+    mean_z: i32,
+    /// Current survey-in mean position 3D variance
+    mean_v: i32,
+    /// Number of position observations used during survey-in
+    obs: u32,
+    /// Survey-in position validity flag, 1 = valid, otherwise 0
+    valid: u8,
+    /// Survey-in in progress flag, 1 = in-progress, otherwise 0
+    active: u8,
+    reserved: [u8; 2],
+}
+
 /// Time mark data
 #[ubx_packet_recv]
 #[ubx(class = 0x0d, id = 0x03, fixed_payload_len = 28)]
@@ -2998,45 +3808,6 @@ pub enum AntennaStatus {
     Open = 4,
 }
 
-/// GNSS status monitoring,
-/// gives currently selected constellations
-#[ubx_packet_recv]
-#[ubx(class = 0x0a, id = 0x28, fixed_payload_len = 8)]
-struct MonGnss {
-    /// Message version: 0x00
-    version: u8,
-    /// Supported major constellations bit mask
-    #[ubx(map_type = MonGnssConstellMask)]
-    supported: u8,
-    /// Default major GNSS constellations bit mask
-    #[ubx(map_type = MonGnssConstellMask)]
-    default: u8,
-    /// Currently enabled major constellations bit mask
-    #[ubx(map_type = MonGnssConstellMask)]
-    enabled: u8,
-    /// Maximum number of concurent Major GNSS
-    /// that can be supported by this receiver
-    simultaneous: u8,
-    reserved1: [u8; 3],
-}
-
-#[ubx_extend_bitflags]
-#[ubx(from, into_raw, rest_reserved)]
-bitflags! {
-    /// Selected / available Constellation Mask
-    #[derive(Default, Debug)]
-    pub struct MonGnssConstellMask: u8 {
-        /// GPS constellation
-        const GPS = 0x01;
-        /// GLO constellation
-        const GLO = 0x02;
-        /// BDC constellation
-        const BDC = 0x04;
-        /// GAL constellation
-        const GAL = 0x08;
-    }
-}
-
 #[ubx_extend]
 #[ubx(from, rest_reserved)]
 #[repr(u8)]
@@ -3045,75 +3816,6 @@ pub enum AntennaPower {
     Off = 0,
     On = 1,
     DontKnow = 2,
-}
-
-#[derive(Debug, Clone)]
-pub struct MonVerExtensionIter<'a> {
-    data: &'a [u8],
-    offset: usize,
-}
-
-impl<'a> MonVerExtensionIter<'a> {
-    fn new(data: &'a [u8]) -> Self {
-        Self { data, offset: 0 }
-    }
-
-    fn is_valid(payload: &[u8]) -> bool {
-        payload.len() % 30 == 0 && payload.chunks(30).all(is_cstr_valid)
-    }
-}
-
-impl<'a> core::iter::Iterator for MonVerExtensionIter<'a> {
-    type Item = &'a str;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.offset < self.data.len() {
-            let data = &self.data[self.offset..self.offset + 30];
-            self.offset += 30;
-            Some(mon_ver::convert_to_str_unchecked(data))
-        } else {
-            None
-        }
-    }
-}
-
-/// Receiver/Software Version
-#[ubx_packet_recv]
-#[ubx(class = 0x0a, id = 0x04, max_payload_len = 1240)]
-struct MonVer {
-    #[ubx(map_type = &str, may_fail, from = mon_ver::convert_to_str_unchecked,
-          is_valid = mon_ver::is_cstr_valid, get_as_ref)]
-    software_version: [u8; 30],
-    #[ubx(map_type = &str, may_fail, from = mon_ver::convert_to_str_unchecked,
-          is_valid = mon_ver::is_cstr_valid, get_as_ref)]
-    hardware_version: [u8; 10],
-
-    /// Extended software information strings
-    #[ubx(map_type = MonVerExtensionIter, may_fail,
-          from = MonVerExtensionIter::new,
-          is_valid = MonVerExtensionIter::is_valid)]
-    extension: [u8; 0],
-}
-
-mod mon_ver {
-    pub(crate) fn convert_to_str_unchecked(bytes: &[u8]) -> &str {
-        let null_pos = bytes
-            .iter()
-            .position(|x| *x == 0)
-            .expect("is_cstr_valid bug?");
-        core::str::from_utf8(&bytes[0..null_pos])
-            .expect("is_cstr_valid should have prevented this code from running")
-    }
-
-    pub(crate) fn is_cstr_valid(bytes: &[u8]) -> bool {
-        let null_pos = match bytes.iter().position(|x| *x == 0) {
-            Some(pos) => pos,
-            None => {
-                return false;
-            },
-        };
-        core::str::from_utf8(&bytes[0..null_pos]).is_ok()
-    }
 }
 
 #[ubx_packet_recv]
@@ -3430,16 +4132,6 @@ struct NavAtt {
     acc_heading: u32,
 }
 
-#[ubx_packet_recv]
-#[ubx(class = 0x01, id = 0x22, fixed_payload_len = 20)]
-struct NavClock {
-    itow: u32,
-    clk_b: i32,
-    clk_d: i32,
-    t_acc: u32,
-    f_acc: u32,
-}
-
 #[ubx_extend_bitflags]
 #[ubx(from, rest_reserved)]
 bitflags! {
@@ -3509,16 +4201,6 @@ impl<'a> core::iter::Iterator for DwrdIter<'a> {
             .next()
             .map(|bytes| u32::from_le_bytes(bytes.try_into().unwrap()))
     }
-}
-
-#[ubx_packet_recv]
-#[ubx(class = 0x01, id = 0x11, fixed_payload_len = 20)]
-struct NavVelECEF {
-    itow: u32,
-    ecef_vx: i32,
-    ecef_vy: i32,
-    ecef_vz: u32,
-    s_acc: u32,
 }
 
 #[ubx_packet_recv]
@@ -3672,7 +4354,6 @@ define_recv_packets!(
         NavSat,
         NavEoe,
         NavOdo,
-        CfgOdo,
         MgaAck,
         MgaGpsIono,
         MgaGpsEph,
@@ -3680,15 +4361,10 @@ define_recv_packets!(
         AlpSrv,
         AckAck,
         AckNak,
+        CfgValGetResp,
+        CfgValSet,
         CfgItfm,
-        CfgPrtI2c,
-        CfgPrtSpi,
-        CfgPrtUart,
         CfgNav5,
-        CfgAnt,
-        CfgTmode2,
-        CfgTmode3,
-        CfgTp5,
         InfError,
         InfWarning,
         InfNotice,
@@ -3697,6 +4373,7 @@ define_recv_packets!(
         RxmRawx,
         TimTp,
         TimTm2,
+        MonComms,
         MonVer,
         MonGnss,
         MonHw,
